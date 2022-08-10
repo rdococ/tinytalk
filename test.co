@@ -1,0 +1,33 @@
+(define make-nats [(n)
+	{((get) n)
+	 ((next) (make-nats : (n + 1)))}
+])
+(define nats (make-nats : 1))
+
+(define filter [(str fn)
+	(define v (str get))
+	((fn : v) match {
+		((true) {
+			((get) v)
+			((next) (filter : (str next) fn))
+		})
+		((false) (filter : (str next) fn))
+	})
+])
+
+(define evens (filter : nats [(n) ((n % 2) = 0)]))
+
+(define for [(a b fn)
+	((a <= b) match {
+		((true)
+			(fn : a)
+			(for : (a + 1) b fn))
+		((false))
+	})
+])
+
+(define strc (cell new evens))
+(for : 1 10 [(n)
+	(console print (n .. ": " ((strc *) get)))
+	(strc := ((strc *) next))
+])
