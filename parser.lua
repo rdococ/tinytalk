@@ -77,7 +77,8 @@ Parser.__index = Parser
 
 Parser.whitespace = set(" \t\n;")
 Parser.wordEnders = set(" \t\n()[]{};", true)
-Parser.closingBrackets = {["("] = ")", ["["] = "]", ["{"] = "}"}
+Parser.bracketClosers = {["("] = ")", ["["] = "]", ["{"] = "}"}
+Parser.invalidClosers = set(")]}", true)
 
 function Parser:new()
 	return setmetatable({}, self)
@@ -108,9 +109,36 @@ function Parser:skipWhitespace()
 		self.reader:read()
 	end
 end
-function Parser:consumeBracket()
-	local open = self.reader:read()
-	return self.closingBrackets[open] or "", open
+function Parser:consumeBracket(bracket)
+	local opened = self.reader:read()
+	local closed = self.bracketClosers[opened]
+	
+	if bracket then
+		if opened ~= bracket then
+			self:error("Expected '%s' bracket, got '%s'", bracket, opened)
+		end
+	else
+		if not closed then
+			self:error("Expected a bracket, got '%s'", opened)
+		end
+	end
+	
+	return closed, opened
+end
+function Parser:consumeTermList(func, bracket)
+	local closer = self:consumeBracket(bracket)
+	while true do
+		self:skipWhitespace()
+		local char = self.reader:peek()
+		if char == closer then
+			self.reader:read()
+			break
+		elseif self.invalidClosers[char] then
+			self:error("Expected '%s', got '%s'", closer, char)
+		end
+		
+		func()
+	end
 end
 
 function Parser:createTerm(type, attributes)
@@ -168,50 +196,36 @@ end
 function Parser:parseSend()
 	local send = self:createTerm("send", {})
 	
-	local closer = self:consumeBracket()
+	local closer, opener = self:consumeBracket()
 	self:skipWhitespace()
 	send.receiver = self:parseExpression()
 	self:skipWhitespace()
 	send.message = self:parseWord()
 	
-	while true do
-		self:skipWhitespace()
-		local char = self.reader:peek()
-		if char == closer then
-			self.reader:read()
-			break
-		end
-		
+	self.reader:unread(opener)
+	self:consumeTermList(function ()
 		table.insert(send, self:parseExpression())
-	end
+	end)
 	
 	return send
 end
 function Parser:parseObject()
 	local object = self:createTerm("object", {})
 	
-	local closer = self:consumeBracket()
-	while true do
-		self:skipWhitespace()
-		local char = self.reader:peek()
-		if char == closer then
-			self.reader:read()
-			break
-		end
-		
+	self:consumeTermList(function ()
 		table.insert(object, self:parseMethod())
-	end
+	end)
 	
 	return object
 end
 function Parser:parseMethod()
 	local method = self:createTerm("method", {})
 	
-	local closer, opener = self:consumeBracket()
+	local closer, opener = self:consumeBracket("(")
 	self:skipWhitespace()
 	
 	-- Parse the first word in the method signature as a message name, and the rest as parameters
-	local sigCloser, sigOpener = self:consumeBracket()
+	local sigCloser, sigOpener = self:consumeBracket("(")
 	self:skipWhitespace()
 	method.message = self:parseWord()
 	self.reader:unread(sigOpener)
@@ -239,34 +253,18 @@ end
 function Parser:parseParameters()
 	local parameters = self:createTerm("parameters")
 	
-	local closer = self:consumeBracket()
-	while true do
-		self:skipWhitespace()
-		local char = self.reader:peek()
-		if char == closer then
-			self.reader:read()
-			break
-		end
-		
+	self:consumeTermList(function ()
 		table.insert(parameters, self:parseWord())
-	end
+	end, "(")
 	
 	return parameters
 end
 function Parser:parseBody()
 	local body = self:createTerm("body")
 	
-	local closer = self:consumeBracket()
-	while true do
-		self:skipWhitespace()
-		local char = self.reader:peek()
-		if char == closer then
-			self.reader:read()
-			break
-		end
-		
+	self:consumeTermList(function ()
 		table.insert(body, self:parseExpression())
-	end
+	end)
 	
 	return body
 end
@@ -293,6 +291,8 @@ function Parser:parseString()
 		local char = self.reader:read()
 		if char == "\\" then
 			str.value = str.value .. self.reader:read()
+		elseif char == "" then
+			self:error("Expected end of string, got nothing")
 		else
 			str.value = str.value .. char
 		end
@@ -308,6 +308,10 @@ function Parser:parseNumber()
 		num.value = num.value .. char
 	end
 	num.value = tonumber(num.value)
+	
+	if num.value == nil then
+		return self:error("Expected a valid number")
+	end
 	
 	return num
 end
