@@ -169,36 +169,36 @@ function Interpreter:findMethod(receiver, message)
 			-- Look up method in receiver definition
 			if definition.type == "procedure" then
 				if message == ":" then
-					return definition
+					return receiver, definition
 				end
 			else
 				for _, mth in ipairs(definition) do
 					if mth.type == "method" and mth.message == message then
-						return mth
-					elseif mth.type == "forward" then
-						local mth = self:findMethod(self:runTerm(mth.target, context), message)
-						if mth then return mth end
+						return receiver, mth
+					elseif mth.type == "decoration" then
+						local decoratee, mth = self:findMethod(self:runTerm(mth.target, context), message)
+						if mth then return decoratee, mth end
 					end
 				end
 			end
 		elseif receiver.type == "builtin" then
 			if message == "type" then return end
-			return receiver[message]
+			return receiver, receiver[message]
 		end
 	else
 		if type(receiver) == "string" then
-			return self.stringMethods[message]
+			return receiver, self.stringMethods[message]
 		elseif type(receiver) == "number" then
-			return self.numberMethods[message]
+			return receiver, self.numberMethods[message]
 		elseif type(receiver) == "boolean" then
-			return self.booleanMethods[message]
+			return receiver, self.booleanMethods[message]
 		elseif type(receiver) == "nil" then
-			return self.nilMethods[message]
+			return receiver, self.nilMethods[message]
 		end
 	end
 end
 function Interpreter:runMethod(receiver, message, arguments)
-	local method = self:findMethod(receiver, message)
+	local receiver, method = self:findMethod(receiver, message)
 	if not method then return self:error("Message %s not understood", message) end
 	
 	if type(method) == "table" then

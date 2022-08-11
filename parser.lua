@@ -11,7 +11,7 @@ Term types:
 "variable" - name: string
 "string" - value: string
 "number" - value: number
-"forward" - target: expression
+"decoration" - target: expression
 ]]
 
 local function set(str, empty)
@@ -109,24 +109,30 @@ function Parser:skipWhitespace()
 		self.reader:read()
 	end
 end
-function Parser:consumeBracket(bracket)
-	local opened = self.reader:read()
-	local closed = self.bracketClosers[opened]
+function Parser:consumeOpener(bracket)
+	local opener = self.reader:read()
+	local closer = self.bracketClosers[opener]
 	
 	if bracket then
-		if opened ~= bracket then
-			self:error("Expected '%s' bracket, got '%s'", bracket, opened)
+		if opener ~= bracket then
+			self:error("Expected '%s', got '%s'", bracket, opener)
 		end
 	else
-		if not closed then
-			self:error("Expected a bracket, got '%s'", opened)
+		if not closer then
+			self:error("Expected a bracket, got '%s'", opener)
 		end
 	end
 	
-	return closed, opened
+	return closer, opener
+end
+function Parser:consumeCloser(bracket)
+	local char = self.reader:read()
+	if char ~= bracket then
+		self:error("Expected '%s', got '%s'", bracket, char)
+	end
 end
 function Parser:consumeTermList(func, bracket)
-	local closer = self:consumeBracket(bracket)
+	local closer = self:consumeOpener(bracket)
 	while true do
 		self:skipWhitespace()
 		local char = self.reader:peek()
@@ -166,7 +172,7 @@ end
 function Parser:parseParentheses()
 	local backtrack = self.reader:copy()
 	
-	local closer, opener = self:consumeBracket()
+	local closer, opener = self:consumeOpener()
 	self:skipWhitespace()
 	local word = self:parseWord()
 	
@@ -181,7 +187,7 @@ end
 function Parser:parseDefinition()
 	local definition = self:createTerm("definition", {})
 	
-	local closer = self:consumeBracket()
+	local closer = self:consumeOpener()
 	self:skipWhitespace()
 	self:parseWord()
 	self:skipWhitespace()
@@ -189,14 +195,14 @@ function Parser:parseDefinition()
 	self:skipWhitespace()
 	definition.value = self:parseExpression()
 	self:skipWhitespace()
-	self.reader:read()
+	self:consumeCloser(closer)
 	
 	return definition
 end
 function Parser:parseSend()
 	local send = self:createTerm("send", {})
 	
-	local closer, opener = self:consumeBracket()
+	local closer, opener = self:consumeOpener()
 	self:skipWhitespace()
 	send.receiver = self:parseExpression()
 	self:skipWhitespace()
@@ -213,19 +219,44 @@ function Parser:parseObject()
 	local object = self:createTerm("object", {})
 	
 	self:consumeTermList(function ()
-		table.insert(object, self:parseMethod())
+		table.insert(object, self:parseObjectElement())
 	end)
 	
 	return object
 end
-function Parser:parseMethod()
-	local method = self:createTerm("method", {})
+function Parser:parseObjectElement()
+	local closer, opener = self:consumeOpener("(")
+	self:skipWhitespace()
 	
-	local closer, opener = self:consumeBracket("(")
+	local chars = self.reader:peek(2)
+	self.reader:unread(opener)
+	
+	if chars == "->" then
+		return self:parseDecoration()
+	end
+	return self:parseMethod()
+end
+function Parser:parseDecoration()
+	local decoration = self:createTerm("decoration")
+	
+	local closer, opener = self:consumeOpener()
+	self:skipWhitespace()
+	self:parseWord()
+	self:skipWhitespace()
+	decoration.target = self:parseExpression()
+	self:skipWhitespace()
+	self:consumeCloser(closer)
+	
+	return decoration
+end
+function Parser:parseMethod()
+	local method = self:createTerm("method")
+	
+	local closer, opener = self:consumeOpener("(")
 	self:skipWhitespace()
 	
 	-- Parse the first word in the method signature as a message name, and the rest as parameters
-	local sigCloser, sigOpener = self:consumeBracket("(")
+	local sigCloser, sigOpener = self:consumeOpener("(")
 	self:skipWhitespace()
 	method.message = self:parseWord()
 	self.reader:unread(sigOpener)
@@ -240,7 +271,7 @@ end
 function Parser:parseProcedure()
 	local procedure = self:createTerm("procedure", {})
 	
-	local closer, opener = self:consumeBracket()
+	local closer, opener = self:consumeOpener()
 	self:skipWhitespace()
 	procedure.parameters = self:parseParameters()
 	

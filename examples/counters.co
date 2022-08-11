@@ -9,8 +9,16 @@
 	)
 })
 
-(define a-counter (counter new))
-(console print (a-counter get))
 
-(a-counter increment 3)
-(console print (a-counter get))
+(define a-counter (counter new))
+(define logged-c {
+	((get)
+		(console print "Gotten!")
+		(a-counter get))
+	(-> a-counter)
+})
+
+(console print (logged-c get))
+
+(logged-c increment 3)
+(console print (logged-c get))
