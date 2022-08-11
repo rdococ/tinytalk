@@ -1,8 +1,10 @@
+math.randomseed(os.time())
+
 dofile("./parser.lua")
 dofile("./interpreter.lua")
 
 local function getCode()
-	local file = io.open(io.read())
+	local file = io.open(("./examples/%s"):format(io.read()))
 	return file:read("*a")
 end
 
