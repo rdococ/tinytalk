@@ -113,8 +113,9 @@ Interpreter.globals = {
 		new = function (int, self, value)
 			return {
 				type = "builtin",
-				["*"] = function (int, self) return value end,
-				[":="] = function (int, self, x) value = x end
+				["$"] = function (int, self) return value end,
+				[":="] = function (int, self, x) value = x end,
+				decoratees = function (int, self) return value end
 			}
 		end
 	}
@@ -172,18 +173,27 @@ function Interpreter:findMethod(receiver, message)
 					return receiver, definition
 				end
 			else
-				for _, mth in ipairs(definition) do
-					if mth.type == "method" and mth.message == message then
-						return receiver, mth
-					elseif mth.type == "decoration" then
-						local decoratee, mth = self:findMethod(self:runTerm(mth.target, context), message)
-						if mth then return decoratee, mth end
+				for _, method in ipairs(definition) do
+					if method.type == "method" and method.message == message then
+						return receiver, method
+					elseif method.type == "decoration" then
+						local decoratee, method = self:findMethod(self:runTerm(method.target, context), message)
+						if method then return decoratee, method end
 					end
 				end
 			end
 		elseif receiver.type == "builtin" then
-			if message == "type" then return end
-			return receiver, receiver[message]
+			if message == "type" or message == "decoratees" then return end
+			
+			if receiver[message] ~= nil then
+				return receiver, receiver[message]
+			end
+			if receiver.decoratees then
+				for _, decoratee in ipairs({receiver.decoratees(self, receiver)}) do
+					local realDecoratee, method = self:findMethod(decoratee, message)
+					if method then return realDecoratee, method end
+				end
+			end
 		end
 	else
 		if type(receiver) == "string" then
@@ -223,66 +233,3 @@ function Interpreter:runMethod(receiver, message, arguments)
 		return method(self, receiver, unpack(args, 1, #arguments))
 	end
 end
---[[function Interpreter:runMethod(receiver, message, arguments)
-	if type(receiver) == "table" then
-		if receiver.type == "instance" then
-			local definition = receiver.definition
-			
-			-- Look up method in receiver definition
-			local procedure
-			if definition.type == "procedure" then
-				if message == ":" then
-					procedure = definition
-				end
-			else
-				for _, mth in ipairs(definition) do
-					if mth.message == message then
-						procedure = mth
-						break
-					end
-				end
-			end
-			if not procedure then
-				return self:error("Message %s not understood", message)
-			end
-			
-			-- Construct a copy of the receiver's context and assign parameters
-			local context = copy(receiver.context)
-			for i, arg in ipairs(arguments) do
-				arg = arg.value
-				
-				local param = procedure.parameters[i]
-				if not param then break end
-				context[param] = arg
-			end
-			
-			-- Run the method body in the new context
-			return self:runTerm(procedure.body, context)
-		elseif receiver.type == "builtin" then
-			local args = {}
-			for i, arg in ipairs(arguments) do
-				args[i] = arg.value
-			end
-			
-			local method = receiver[message]
-			if type(method) ~= "function" then
-				return self:error("Message %s not understood", message)
-			end
-			
-			return method(self, unpack(args, 1, #arguments))
-		end
-	else
-		local args = {}
-		for i, arg in ipairs(arguments) do
-			args[i] = arg.value
-		end
-		
-		if type(receiver) == "string" then
-			return self.stringMethods[message](self, receiver, unpack(args, 1, #arguments))
-		elseif type(receiver) == "number" then
-			return self.numberMethods[message](self, receiver, unpack(args, 1, #arguments))
-		elseif type(receiver) == "boolean" then
-			return self.booleanMethods[message](self, receiver, unpack(args, 1, #arguments))
-		end
-	end
-end]]

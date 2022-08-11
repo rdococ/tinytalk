@@ -28,6 +28,6 @@
 
 (define strc (cell new evens))
 (for : 1 10 [(n)
-	(console print (n .. ": " ((strc *) get)))
-	(strc := ((strc *) next))
+	(console print (n .. ": " ((strc $) get)))
+	(strc := ((strc $) next))
 ])

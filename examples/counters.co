@@ -2,9 +2,9 @@
 	((new)
 		(define num (cell new 0))
 		{
-			((increment n) (num := ((num *) + n)))
+			((increment n) (num := (num + n)))
 			((reset) (num := 0))
-			((get) (num *))
+			((get) (num $))
 		}
 	)
 })
