@@ -1,0 +1,28 @@
+(define list {
+	((cons hd tl) {((match c) (c cons hd tl))})
+	((empty) {((match c) (c empty))})
+})
+
+(define map [(fn ls)
+	(ls match {
+		((cons hd tl) (list cons (fn : hd) (map : fn tl)))
+		((empty) ls)
+	})
+])
+(define combine [(fn id ls)
+	(ls match {
+		((cons hd tl) (combine : fn (fn : id hd) tl))
+		((empty) id)
+	})
+])
+
+(define ls (list cons 1 (list cons 2 (list cons 3 (list empty)))))
+
+(combine : [(_ v)
+	(console print v)
+] 0 ls)
+(console print (combine : [(x y) (x * y)] 1 ls))
+
+(combine : [(_ v)
+	(console print v)
+] 0 (map : [(x) (x * 2)] ls))
