@@ -15,8 +15,8 @@ abc ; Variable access
 "abc" ; String literal
 ```
 
-Procedures are syntax sugar for objects with only one method, named `:`.
+Procedures are syntax sugar for objects with only a `:` method.
 
 ## Semantics
 
-An object consists of a set of methods with zero or more parameters. Sending a message to an object runs the method with that name, or throws an error if there is no such method.
+All values are objects. An object consists of a set of methods with zero or more parameters. Sending a message to an object runs the method with that name, or throws an error if there is no such method.
