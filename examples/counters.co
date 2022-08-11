@@ -1,0 +1,16 @@
+(define counter {
+	((new)
+		(define num (cell new 0))
+		{
+			((increment n) (num := ((num *) + n)))
+			((reset) (num := 0))
+			((get) (num *))
+		}
+	)
+})
+
+(define a-counter (counter new))
+(console print (a-counter get))
+
+(a-counter increment 3)
+(console print (a-counter get))
