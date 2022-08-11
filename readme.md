@@ -8,7 +8,9 @@ Colang is a purely object-oriented toy programming language. It has a LISP-like 
 ; Comment
 abc ; Variable access
 (define <variable> <value>) ; Variable definition
-{((<message> <parameters...>) <body...>)...} ; Object construction
+{...} ; Object construction
+	((<message> <parameters...>) <body...>) ; Method definition
+	(-> <expression>) ; Message forwarding
 (<expression> <message> <arguments...>) ; Message send
 [(<parameters...>) <body...>] ; Procedure construction
 1.23 ; Number literal
