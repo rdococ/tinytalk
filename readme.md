@@ -1,6 +1,6 @@
 # Colang
 
-Colang is a purely object-oriented toy programming language. It has a LISP-like syntax, immutable variables by default, and a closure-based approach to objects.
+Colang is a purely object-oriented toy programming language. It has a LISP-like syntax, immutable variables by default, and a codata-inspired approach to objects.
 
 ## Syntax
 
@@ -10,7 +10,7 @@ abc ; Variable access
 (define <variable> <value>) ; Variable definition
 {...} ; Object construction
 	((<message> <parameters...>) <body...>) ; Method definition
-	(-> <expression>) ; Message forwarding
+	(-> <expression>) ; Object decoration
 (<expression> <message> <arguments...>) ; Message send
 [(<parameters...>) <body...>] ; Procedure construction
 1.23 ; Number literal
