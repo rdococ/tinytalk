@@ -5,7 +5,15 @@ local function copy(tbl, new)
 	end
 	return new
 end
-local function mmap(list, func)
+local function mapSparse(list, func)
+	local new = {}
+	for i = 1, #list do
+		local v = func(list[i], i)
+		new[i] = v
+	end
+	return new
+end
+local function maybeMap(list, func)
 	local new = {}
 	for i, v in ipairs(list) do
 		local v = func(v, i)
@@ -108,7 +116,7 @@ Interpreter.globals = {
 	console = {
 		type = "builtin",
 		print = function (int, self, ...)
-			return print(unpack(mmap({...}, function (obj)
+			return print(unpack(mapSparse({...}, function (obj)
 				return int:runMethod(obj, "as-string", {})
 			end)))
 		end,
@@ -157,7 +165,7 @@ function Interpreter:runTerm(term, context)
 	elseif term.type == "send" then
 		local receiver = self:runTerm(term.receiver, context)
 		local message = term.message
-		local arguments = mmap(term, function (v)
+		local arguments = maybeMap(term, function (v)
 			return {value = self:runTerm(v, context)}
 		end)
 		

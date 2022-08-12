@@ -1,0 +1,9 @@
+([(x y z w v)
+	(console print x)
+	(console print y)
+	(console print z)
+	(console print w)
+	(console print v)
+] : 1 nil 2 nil 3)
+
+(console print 1 nil 2 nil 3)
