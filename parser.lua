@@ -163,7 +163,7 @@ function Parser:parseExpression()
 		return self:parseProcedure()
 	elseif char == "\"" then
 		return self:parseString()
-	elseif tonumber(char) or char == "." then
+	elseif tonumber(char) or char == "." or char == "-" then
 		return self:parseNumber()
 	else
 		return self:parseVariable()
