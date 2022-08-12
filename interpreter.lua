@@ -40,6 +40,13 @@ local function noint(func)
 	end
 	return function (int, ...) return func(...) end
 end
+local function builtin(methods, decoratees)
+	return {
+		type = "builtin",
+		methods = methods,
+		decoratees = decoratees
+	}
+end
 
 Interpreter = {}
 Interpreter.__index = Interpreter
@@ -113,26 +120,22 @@ Interpreter.globals = {
 	["true"] = true,
 	["false"] = false,
 	infinity = math.huge,
-	console = {
-		type = "builtin",
+	console = builtin({
 		print = function (int, self, ...)
 			return print(table.unpack(mapSparse({...}, function (obj)
 				return int:runMethod(obj, "as-string")
 			end), 1, select("#", ...)))
 		end,
 		read = function (int, self) return io.read() end
-	},
-	cell = {
-		type = "builtin",
+	}),
+	cell = builtin({
 		new = function (int, self, value)
-			return {
-				type = "builtin",
+			return builtin({
 				["$"] = function (int, self) return value end,
-				[":="] = function (int, self, x) value = x end,
-				decoratees = function (int, self) return value end
-			}
+				[":="] = function (int, self, x) value = x end
+			}, function (int, self) return value end)
 		end
-	}
+	})
 }
 
 function Interpreter:new()
@@ -197,10 +200,8 @@ function Interpreter:findMethod(receiver, message)
 				end
 			end
 		elseif receiver.type == "builtin" then
-			if message == "type" or message == "decoratees" then return end
-			
-			if receiver[message] ~= nil then
-				return receiver, receiver[message]
+			if receiver.methods[message] ~= nil then
+				return receiver, receiver.methods[message]
 			end
 			if receiver.decoratees then
 				for _, decoratee in ipairs({receiver.decoratees(self, receiver)}) do
