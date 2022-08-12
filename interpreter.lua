@@ -37,9 +37,9 @@ Interpreter = {}
 Interpreter.__index = Interpreter
 
 Interpreter.stringMethods = copy(noint(string), {
-	size = function (int, s) return #s end,
-	[".."] = function (int, ...) return table.concat({...}) end,
+	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string", {}) end),
 	
+	size = function (int, s) return #s end,
 	at = function (int, s, n) return s:sub(n, n) end,
 	
 	["<"] = function (int, x, y) return x < y end,
@@ -53,12 +53,14 @@ Interpreter.stringMethods = copy(noint(string), {
 	["as-number"] = noint(tonumber)
 })
 Interpreter.numberMethods = copy(noint(math), {
-	["+"] = chainable(function (int, x, y) return x + y end, 0),
-	["-"] = chainable(function (int, x, y) return x - y end, 0),
-	["*"] = chainable(function (int, x, y) return x * y end, 1),
-	["/"] = chainable(function (int, x, y) return x / y end, 1),
-	["%"] = function (int, x, y) return x % y end,
-	[".."] = function (int, ...) return table.concat({...}) end,
+	["+"] = chainable(function (int, x, y) return x + int:runMethod(y, "as-number", {}) end, 0),
+	["-"] = chainable(function (int, x, y) return x - int:runMethod(y, "as-number", {}) end, 0),
+	["*"] = chainable(function (int, x, y) return x * int:runMethod(y, "as-number", {}) end, 1),
+	["/"] = chainable(function (int, x, y) return x / int:runMethod(y, "as-number", {}) end, 1),
+	["^"] = chainable(function (int, x, y) return x ^ int:runMethod(y, "as-number", {}) end, 1),
+	["%"] = function (int, x, y) return x % int:runMethod(y, "as-number", {}) end,
+	
+	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string", {}) end),
 	
 	negated = function (int, x) return -x end,
 	
@@ -105,7 +107,11 @@ Interpreter.globals = {
 	infinity = math.huge,
 	console = {
 		type = "builtin",
-		print = function (int, self, ...) return print(...) end,
+		print = function (int, self, ...)
+			return print(unpack(mmap({...}, function (obj)
+				return int:runMethod(obj, "as-string", {})
+			end)))
+		end,
 		read = function (int, self) return io.read() end
 	},
 	cell = {

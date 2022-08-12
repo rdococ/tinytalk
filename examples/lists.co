@@ -1,6 +1,14 @@
 (define list {
-	((cons hd tl) {((match c) (c cons hd tl))})
-	((empty) {((match c) (c empty))})
+	((cons hd tl) {
+		((match c) (c cons hd tl))
+		((as-string) ("[" .. hd (tl as-tail-string)))
+		((as-tail-string) (", " .. hd (tl as-tail-string)))
+	})
+	((empty) {
+		((match c) (c empty))
+		((as-string) "")
+		((as-tail-string) "]")
+	})
 })
 
 (define map [(fn ls)
@@ -17,6 +25,10 @@
 ])
 
 (define ls (list cons 1 (list cons 2 (list cons 3 (list empty)))))
+(console print ls)
+
+(define ls2 (map : [(x) (x * 2)] ls))
+(console print ls2)
 
 (combine : [(_ v)
 	(console print v)
@@ -25,4 +37,8 @@
 
 (combine : [(_ v)
 	(console print v)
-] 0 (map : [(x) (x * 2)] ls))
+] 0 ls2)
+(console print (combine : [(x y) (x * y)] 1 ls2))
+
+(define lsn (map : [(x) (map : [(y) (((x - 1) * 3) + y)] ls)] ls))
+(console print lsn)
