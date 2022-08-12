@@ -1,3 +1,5 @@
+; Testing correct passing of nil arguments
+
 ([(x y z w v)
 	(console print x)
 	(console print y)

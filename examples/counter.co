@@ -1,3 +1,5 @@
+; Using object decoration to log 'get' messages on counter objects
+
 (define counter {
 	((new)
 		(define num (cell new 0))
@@ -20,5 +22,5 @@
 
 (console print (logged-c get))
 
-(logged-c increment 3)
+(a-counter increment 3)
 (console print (logged-c get))

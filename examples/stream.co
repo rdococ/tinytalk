@@ -1,0 +1,31 @@
+; Using objects to create infinite streams
+
+(define filter [(str fn)
+	(define v (str get))
+	((fn : v) match {
+		((true) {
+			((get) v)
+			((next) (filter : (str next) fn))
+		})
+		((false) (filter : (str next) fn))
+	})
+])
+
+(define make-nats [(n)
+	{((get) n)
+	 ((next) (make-nats : (n + 1)))}
+])
+
+(define nats (make-nats : 1))
+(define evens (filter : nats [(n) ((n % 2) = 0)]))
+
+(define force [(num str fn)
+	((num <= 0) match {
+		((true))
+		((false) (fn : (str get)) (force : (num - 1) (str next) fn))
+	})
+])
+
+(force : 10 evens [(n)
+	(console print n)
+])

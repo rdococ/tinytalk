@@ -20,6 +20,9 @@
 					(console read)
 					(health := (health - power))
 					(target := attacker)
+					(if : (health <= 0) [()
+						(console print "The zombie falls over!")
+					])
 				])
 			)
 			((your-turn)
@@ -46,7 +49,7 @@
 		)
 		((your-turn)
 			(console print ("Health: " .. health))
-			(health match {
+			((health > 0) match {
 				((true)
 					(console print "What do you do?")
 					(define input (console read))

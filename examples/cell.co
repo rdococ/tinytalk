@@ -1,0 +1,35 @@
+; Using mutable cell objects to take an imperative approach to fibonacci numbers
+
+(define when [(cond body)
+	(cond match {
+		((true) (body :))
+		((false))
+	})
+])
+(define while [(cond body)
+	(when : (cond :) [()
+		(body :)
+		(while : cond body)
+	])
+])
+(define for [(a b body)
+	(define n (cell new a))
+	(while : [() (n <= b)] [()
+		(body : (n $))
+		(n := (n + 1))
+	])
+])
+
+(define fib [(n)
+	(define a (cell new 0))
+	(define b (cell new 1))
+	(for : 1 n [()
+		(b := (b + a))
+		(a := (b - a))
+	])
+	a
+])
+
+(while : [() true] [()
+	(console print (fib : ((console read) as-number)))
+])
