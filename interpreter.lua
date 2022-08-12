@@ -45,7 +45,7 @@ Interpreter = {}
 Interpreter.__index = Interpreter
 
 Interpreter.stringMethods = copy(noint(string), {
-	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string", {}) end),
+	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string") end),
 	
 	size = function (int, s) return #s end,
 	at = function (int, s, n) return s:sub(n, n) end,
@@ -61,14 +61,14 @@ Interpreter.stringMethods = copy(noint(string), {
 	["as-number"] = noint(tonumber)
 })
 Interpreter.numberMethods = copy(noint(math), {
-	["+"] = chainable(function (int, x, y) return x + int:runMethod(y, "as-number", {}) end, 0),
-	["-"] = chainable(function (int, x, y) return x - int:runMethod(y, "as-number", {}) end, 0),
-	["*"] = chainable(function (int, x, y) return x * int:runMethod(y, "as-number", {}) end, 1),
-	["/"] = chainable(function (int, x, y) return x / int:runMethod(y, "as-number", {}) end, 1),
-	["^"] = chainable(function (int, x, y) return x ^ int:runMethod(y, "as-number", {}) end, 1),
-	["%"] = function (int, x, y) return x % int:runMethod(y, "as-number", {}) end,
+	["+"] = chainable(function (int, x, y) return x + int:runMethod(y, "as-number") end, 0),
+	["-"] = chainable(function (int, x, y) return x - int:runMethod(y, "as-number") end, 0),
+	["*"] = chainable(function (int, x, y) return x * int:runMethod(y, "as-number") end, 1),
+	["/"] = chainable(function (int, x, y) return x / int:runMethod(y, "as-number") end, 1),
+	["^"] = chainable(function (int, x, y) return x ^ int:runMethod(y, "as-number") end, 1),
+	["%"] = function (int, x, y) return x % int:runMethod(y, "as-number") end,
 	
-	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string", {}) end),
+	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string") end),
 	
 	negated = function (int, x) return -x end,
 	
@@ -84,7 +84,7 @@ Interpreter.numberMethods = copy(noint(math), {
 })
 Interpreter.booleanMethods = {
 	match = function (int, bool, clause)
-		return int:runMethod(clause, bool and "true" or "false", {})
+		return int:runMethod(clause, bool and "true" or "false")
 	end,
 	
 	["and"] = chainable(function (int, x, y) return x and y end, true),
@@ -97,7 +97,7 @@ Interpreter.booleanMethods = {
 }
 Interpreter.nilMethods = {
 	match = function (int, v, clause)
-		return int:runMethod(clause, "nil", {})
+		return int:runMethod(clause, "nil")
 	end,
 	
 	["and"] = chainable(function (int, x, y) return x and y end, true),
@@ -116,9 +116,9 @@ Interpreter.globals = {
 	console = {
 		type = "builtin",
 		print = function (int, self, ...)
-			return print(unpack(mapSparse({...}, function (obj)
-				return int:runMethod(obj, "as-string", {})
-			end)))
+			return print(table.unpack(mapSparse({...}, function (obj)
+				return int:runMethod(obj, "as-string")
+			end), 1, select("#", ...)))
 		end,
 		read = function (int, self) return io.read() end
 	},
@@ -165,11 +165,11 @@ function Interpreter:runTerm(term, context)
 	elseif term.type == "send" then
 		local receiver = self:runTerm(term.receiver, context)
 		local message = term.message
-		local arguments = maybeMap(term, function (v)
-			return {value = self:runTerm(v, context)}
+		local arguments = mapSparse(term, function (v)
+			return self:runTerm(v, context)
 		end)
 		
-		return self:runMethod(receiver, message, arguments)
+		return self:runMethod(receiver, message, table.unpack(arguments, 1, #term))
 	elseif term.type == "variable" then
 		return context[term.name]
 	elseif term.type == "string" or term.type == "number" then
@@ -221,29 +221,20 @@ function Interpreter:findMethod(receiver, message)
 		end
 	end
 end
-function Interpreter:runMethod(receiver, message, arguments)
+function Interpreter:runMethod(receiver, message, ...)
 	local receiver, method = self:findMethod(receiver, message)
 	if not method then return self:error("Message %s not understood", message) end
 	
 	if type(method) == "table" then
 		-- Construct a copy of the receiver's context and assign parameters
 		local context = copy(receiver.context)
-		for i, arg in ipairs(arguments) do
-			arg = arg.value
-			
-			local param = method.parameters[i]
-			if not param then break end
-			context[param] = arg
+		for i, param in ipairs(method.parameters) do
+			context[param] = select(i, ...)
 		end
 		
 		-- Run the method body in the new context
 		return self:runTerm(method.body, context)
 	elseif type(method) == "function" then
-		local args = {}
-		for i, arg in ipairs(arguments) do
-			args[i] = arg.value
-		end
-		
-		return method(self, receiver, unpack(args, 1, #arguments))
+		return method(self, receiver, ...)
 	end
 end
