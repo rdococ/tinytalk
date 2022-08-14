@@ -5,12 +5,24 @@ local function copy(tbl, new)
 	end
 	return new
 end
-local function mapSparse(list, func)
+local function mapArgs(list, func)
+	local num = 0
+	
 	local new = {}
-	for i = 1, #list do
+	for i = 1, #list - 1 do
 		local v = func(list[i], i)
 		new[i] = v
+		num = num + 1
 	end
+	
+	local values = table.pack(func(list[#list], #list))
+	for i = 1, values.n do
+		new[num + 1] = values[i]
+		num = num + 1
+	end
+	
+	new.n = num
+	
 	return new
 end
 local function maybeMap(list, func)
@@ -122,9 +134,10 @@ Interpreter.globals = {
 	infinity = math.huge,
 	console = builtin({
 		print = function (int, self, ...)
-			return print(table.unpack(mapSparse({...}, function (obj)
+			local values = mapArgs({...}, function (obj)
 				return int:runMethod(obj, "as-string")
-			end), 1, select("#", ...)))
+			end)
+			return print(table.unpack(values, 1, values.n))
 		end,
 		read = function (int, self) return io.read() end
 	}),
@@ -134,6 +147,11 @@ Interpreter.globals = {
 				["$"] = function (int, self) return value end,
 				[":="] = function (int, self, x) value = x end
 			}, function (int, self) return value end)
+		end
+	}),
+	count = builtin({
+		[":"] = function (int, self, ...)
+			return select("#", ...)
 		end
 	})
 }
@@ -157,9 +175,9 @@ function Interpreter:runTerm(term, context)
 	if term.type == "body" then
 		local result = nil
 		for _, subterm in ipairs(term) do
-			result = self:runTerm(subterm, context)
+			result = table.pack(self:runTerm(subterm, context))
 		end
-		return result
+		return table.unpack(result)
 	elseif term.type == "definition" then
 		context[term.name] = self:runTerm(term.value, context)
 		return context[term.name]
@@ -168,13 +186,18 @@ function Interpreter:runTerm(term, context)
 	elseif term.type == "send" then
 		local receiver = self:runTerm(term.receiver, context)
 		local message = term.message
-		local arguments = mapSparse(term, function (v)
+		local arguments = mapArgs(term, function (v)
 			return self:runTerm(v, context)
 		end)
 		
-		return self:runMethod(receiver, message, table.unpack(arguments, 1, #term))
+		return self:runMethod(receiver, message, table.unpack(arguments, 1, arguments.n))
 	elseif term.type == "variable" then
-		return context[term.name]
+		local value = context[term.name]
+		
+		if type(value) == "table" and value.type == "tuple" then
+			return table.unpack(value)
+		end
+		return value
 	elseif term.type == "string" or term.type == "number" then
 		return term.value
 	end
@@ -230,7 +253,12 @@ function Interpreter:runMethod(receiver, message, ...)
 		-- Construct a copy of the receiver's context and assign parameters
 		local context = copy(receiver.context)
 		for i, param in ipairs(method.parameters) do
-			context[param] = select(i, ...)
+			if i == #method.parameters and param:sub(-3, -1) == "..." then
+				context[param:sub(1, -4)] = select(i, ...)
+				context[param] = {type = "tuple", n = select("#", ...) - i + 1, select(i, ...)}
+			else
+				context[param] = select(i, ...)
+			end
 		end
 		
 		-- Run the method body in the new context

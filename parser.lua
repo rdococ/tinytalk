@@ -287,6 +287,13 @@ function Parser:parseParameters()
 	self:consumeTermList(function ()
 		table.insert(parameters, self:parseWord())
 	end, "(")
+
+	for i = 1, #parameters - 1 do
+		local param = parameters[i]
+		if param:sub(-3, -1) == "..." then
+			self:error("Expected non-vararg parameter")
+		end
+	end
 	
 	return parameters
 end

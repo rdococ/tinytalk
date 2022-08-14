@@ -1,11 +1,11 @@
 ; Testing correct passing of nil arguments
 
-([(x y z w v)
+([(x y z w ...)
 	(console print x)
 	(console print y)
 	(console print z)
 	(console print w)
-	(console print v)
-] : 1 nil 2 nil 3)
+	(console print ...)
+] : 1 nil 2 nil 3 nil 4 nil 5)
 
-(console print 1 nil 2 nil 3)
+(console print 1 nil 2 nil 3 nil nil 4 5 6)
