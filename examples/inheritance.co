@@ -1,0 +1,13 @@
+"Using object 'reverse-decoration' to emulate inheritance"
+
+Bird :=
+	[sire: sub
+		self := [\sub
+		|fly console print: 'I, ', self name, ' am flying!'
+		|name 'Polly']].
+
+Chicken :=
+	[sire: sub    Bird sire: [\sub |name 'Cluckers']].
+
+cluckers := Chicken sire: [ ].
+cluckers fly.
