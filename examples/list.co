@@ -8,6 +8,11 @@ List :=
 	|empty
 		[match: cases cases empty]].
 
-l := List cons: 1 With: (List cons: 2 With: (List cons: 3 With: empty)).
+map :=
+	[over: ls With: fn
+		ls match: [cons: h With: t    List cons: (fn do: h) With: (map over: t With: fn)
+				  |empty              ls]].
 
-console print: l tail tail head. "3"
+l := map over: (List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty))) With: [do: x x * 2].
+
+console print: l tail tail head. "6"
