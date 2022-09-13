@@ -195,7 +195,7 @@ function Parser:parseExpression()
 	return self:parseExprDefinition(self:parseValue())
 end
 function Parser:getPrecedence(token)
-	if self.symbols[token.type] or token.type == "message continuer" then
+	if self.bodyClosers[token.type] or token.type == "." or token.type == "message continuer" then
 		return -1
 	elseif token.type == "definition" then
 		return 0
@@ -205,6 +205,8 @@ function Parser:getPrecedence(token)
 		return 2
 	elseif token.type == "word" then
 		return 3
+	else
+		return self:error("Expected operation")
 	end
 end
 function Parser:parseExprDefinition(value)
