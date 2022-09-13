@@ -9,5 +9,5 @@ Bird :=
 Chicken :=
 	[sire: sub    Bird sire: [\sub |name 'Cluckers']].
 
-cluckers := Chicken sire: [ ].
-cluckers fly.
+cluckers := Chicken sire: [].
+cluckers fly. "I, Cluckers, am flying!"
