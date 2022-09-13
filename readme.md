@@ -1,6 +1,6 @@
 # Colang 0.2
 
-Colang is a purely object-oriented toy programming language with a Smalltalk-like syntax and immutable variables by default.
+Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-like syntax, immutable variables by default and a codata-inspired approach to objects.
 
 ## Syntax
 
