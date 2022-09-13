@@ -51,7 +51,7 @@ function Parser:parseProgram()
 	local token = self:peek()
 	
 	if token then
-		self:error("Expected end of program, got %q", token.value)
+		self:error("Expected end of program, got %q", token.type)
 	end
 	return body
 end
@@ -70,7 +70,7 @@ function Parser:parseValue()
 		
 		local token = self:read()
 		if token.type ~= ")" then
-			self:error("Expected closed parenthesis, got %q", token.value)
+			self:error("Expected closed parenthesis, got %q", token.type)
 		end
 		
 		return expr
@@ -80,12 +80,12 @@ function Parser:parseValue()
 		return self:read()
 	end
 	
-	self:error("Expected value, got %q", token.value)
+	self:error("Expected value, got %q", token.type)
 end
 function Parser:parseVariable()
 	local token = self:read()
 	if token.type ~= "word" then
-		self:error("Expected variable, got %q", token.value)
+		self:error("Expected variable, got %q", token.type)
 	end
 	return self:createTerm("variable", {name = token.value})
 end
@@ -101,6 +101,7 @@ function Parser:parseObject()
 		self:read()
 		table.insert(object, self:parseDecoration())
 	elseif token.type == "]" then
+		self:read()
 		return object
 	else
 		table.insert(object, self:parseMethod())
@@ -116,7 +117,7 @@ function Parser:parseObject()
 		elseif token.type == "]" then
 			break
 		else
-			self:error("Expected object body, got %q", token.value)
+			self:error("Expected object body, got %q", token.type)
 		end
 	end
 	
@@ -134,7 +135,7 @@ function Parser:parseMethodSignature()
 	if not token then
 		self:error("Expected method signature, got nothing")
 	elseif token.type ~= "word" and token.type ~= "message starter" and token.type ~= "operation" then
-		self:error("Expected method signature, got %q", token.value)
+		self:error("Expected method signature, got %q", token.type)
 	end
 	local name = token.value
 	method.message = name
