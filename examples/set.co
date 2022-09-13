@@ -1,0 +1,16 @@
+"Example defining sets in an object-oriented way"
+
+nats := [empty false
+	    |contains: n
+          n > 0 and: n floor = n].
+odds := [empty false
+		|contains: n
+		  nats contains: n and: n % 2 = 1].
+
+forever := [do: body
+             body do.
+			 forever do: body].
+
+forever do: [do
+	x := console read makeNumber.
+	console print: (odds contains: x)].

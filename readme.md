@@ -1,25 +1,47 @@
-# Colang
+# Colang 0.2
 
-Colang is a purely object-oriented toy programming language. It has a LISP-like syntax, immutable variables by default, and a codata-inspired approach to objects.
+Colang is a purely object-oriented toy programming language with a Smalltalk-like syntax and immutable variables by default.
 
 ## Syntax
 
 ```
-; Comment
-abc ; Variable access
-(define <variable> <expression>) ; Variable definition
-{...} ; Object construction
-	((<message> <parameters...>) <body...>) ; Method definition
-	(-> <expression>) ; Object decoration
-(<expression> <message> <arguments...>) ; Message send
-[(<parameters...>) <body...>] ; Procedure construction
-1.23 ; Number literal
-"abc" ; String literal
+"Comment"
+
+"Body of statements"
+zombie attackedWith: player wieldedItem By: player.
+player wieldedItem degrade: 1.
+
+"Variable access"
+abc
+
+"Variable definition"
+abc := x
+
+"Keyword message"
+x doWith: y And: z
+
+"Binary operator message"
+x + y
+
+"Unary message"
+x negate 
+
+"Parentheses"
+(x)
+
+"Object definition"
+[doWith: x
+	x foo
+|doWith: x And: y
+	x foo: y
+\decoratee]
+
+"String literal"
+'abc'
+
+"Number literal"
+1.23
 ```
-
-Procedures are syntax sugar for objects with only a `:` method.
-
-Suffixing the last parameter of a method with `...` will make it a vararg parameter holding the rest of the arguments. This and object decoration are experimental features.
 
 ## Semantics
 

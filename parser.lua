@@ -1,19 +1,3 @@
---[[
-Term types:
-
-"object" - [n]: method
-"method" - message: string, parameters: parameters, body: body
-"definition" - name: string, value: expression
-"send" - receiver: expression, message: string, [n]: expression
-"parameters" - [n]: variable
-"procedure" - parameters: parameters, body: body
-"body" - [n]: expression
-"variable" - name: string
-"string" - value: string
-"number" - value: number
-"decoration" - target: expression
-]]
-
 local function set(str, empty)
 	local set = {}
 	for i = 1, #str do
@@ -23,333 +7,292 @@ local function set(str, empty)
 	return set
 end
 
-local Reader = {}
-Reader.__index = Reader
-
-function Reader:new(text)
-	return setmetatable({text = text, index = 1, lineNum = 1}, self)
-end
-function Reader:peek(n)
-	n = n or 1
-	return self.text:sub(self.index, self.index + n - 1)
-end
-function Reader:read(n)
-	n = n or 1
-	local substr = self:peek(n)
-	self.index = self.index + n
-	
-	local _, lines = substr:gsub("\n", "")
-	self.lineNum = self.lineNum + lines
-	
-	return substr
-end
-function Reader:unread(v)
-	if type(v) == "number" then
-		local num = v
-		
-		self.index = self.index - num
-		
-		local _, lines = self:peek(num):gsub("\n", "")
-		self.lineNum = self.lineNum - lines
-	else
-		local text = v
-		
-		self.text = text .. self.text:sub(self.index, #self.text)
-		self.index = 1
-		
-		local _, lines = text:gsub("\n", "")
-		self.lineNum = self.lineNum - lines
-	end
-end
-function Reader:line()
-	return self.lineNum
-end
-function Reader:copy()
-	local new = setmetatable({}, getmetatable(self))
-	for k, v in pairs(self) do
-		new[k] = v
-	end
-	return new
-end
-
 Parser = {}
 Parser.__index = Parser
 
-Parser.whitespace = set(" \t\n;")
-Parser.wordEnders = set(" \t\n()[]{};", true)
-Parser.bracketClosers = {["("] = ")", ["["] = "]", ["{"] = "}"}
-Parser.invalidClosers = set(")]}", true)
+Parser.symbols = set("[]()|\\.")
+Parser.bodyClosers = set(")]|\\")
 
 function Parser:new()
 	return setmetatable({}, self)
 end
 
-function Parser:parse(code)
-	self.reader = Reader:new(("(%s)"):format(code))
+function Parser:parse(tokens)
+	self.tokens = tokens
+	self.index = 1
+	self.line = self:peek() and self:peek().line
 	
-	return self:parseBody()
+	return self:parseProgram()
 end
 function Parser:error(err, ...)
-	if self.reader then
-		return error(("Line %s: %s"):format(self.reader:line(), err:format(...)))
+	if self:peek() then
+		return error(("Line %s: %s"):format(self:peek().line, err:format(...)))
 	end
 	return error(err:format(...))
 end
 
-function Parser:skipWhitespace()
-	while true do
-		local char = self.reader:peek()
-		if not self.whitespace[char] then return end
-		if char == ";" then
-			while self.reader:peek() ~= "\n" do
-				self.reader:read()
-			end
-		end
-		
-		self.reader:read()
-	end
-end
-function Parser:consumeOpener(bracket)
-	local opener = self.reader:read()
-	local closer = self.bracketClosers[opener]
-	
-	if bracket then
-		if opener ~= bracket then
-			self:error("Expected '%s', got '%s'", bracket, opener)
-		end
-	else
-		if not closer then
-			self:error("Expected a bracket, got '%s'", opener)
-		end
-	end
-	
-	return closer, opener
-end
-function Parser:consumeCloser(bracket)
-	local char = self.reader:read()
-	if char ~= bracket then
-		self:error("Expected '%s', got '%s'", bracket, char)
-	end
-end
-function Parser:consumeTermList(func, bracket)
-	local closer = self:consumeOpener(bracket)
-	while true do
-		self:skipWhitespace()
-		local char = self.reader:peek()
-		if char == closer then
-			self.reader:read()
-			break
-		elseif self.invalidClosers[char] then
-			self:error("Expected '%s', got '%s'", closer, char)
-		end
-		
-		func()
-	end
-end
-
-function Parser:createTerm(type, attributes)
-	attributes = attributes or {}
-	attributes.type, attributes.line = type, self.reader:line()
+function Parser:createTerm(type, attr)
+	local attributes = attr or {}
+	attributes.type, attributes.line = type, self.line
 	return attributes
 end
+function Parser:peek()
+	return self.tokens[self.index]
+end
+function Parser:read()
+	local token = self:peek()
+	self.index = self.index + 1
+	self.line = token.line
+	return token
+end
 
-function Parser:parseExpression()
-	local char = self.reader:peek()
-	if char == "(" then
-		return self:parseParentheses()
-	elseif char == "{" then
+function Parser:parseProgram()
+	local body = self:parseBody()
+	local token = self:peek()
+	
+	if token then
+		self:error("Expected end of program, got %q", token.value)
+	end
+	return body
+end
+function Parser:parseValue()
+	local token = self:peek()
+	if not token then
+		self:error("Expected value, got nothing")
+	end
+	local content = token.value
+	
+	if token.type == "[" then
 		return self:parseObject()
-	elseif char == "[" then
-		return self:parseProcedure()
-	elseif char == "\"" then
-		return self:parseString()
-	elseif tonumber(char) or char == "." or char == "-" then
-		return self:parseNumber()
-	else
+	elseif token.type == "(" then
+		self:read()
+		local expr = self:parseExpression()
+		
+		local token = self:read()
+		if token.type ~= ")" then
+			self:error("Expected closed parenthesis, got %q", token.value)
+		end
+		
+		return expr
+	elseif token.type == "word" then
 		return self:parseVariable()
+	elseif token.type == "literal" then
+		return self:read()
 	end
+	
+	self:error("Expected value, got %q", token.value)
 end
-function Parser:parseParentheses()
-	local backtrack = self.reader:copy()
-	
-	local closer, opener = self:consumeOpener()
-	self:skipWhitespace()
-	local word = self:parseWord()
-	
-	self.reader = backtrack
-	
-	if word == "define" then
-		return self:parseDefinition()
-	else
-		return self:parseSend()
+function Parser:parseVariable()
+	local token = self:read()
+	if token.type ~= "word" then
+		self:error("Expected variable, got %q", token.value)
 	end
-end
-function Parser:parseDefinition()
-	local definition = self:createTerm("definition", {})
-	
-	local closer = self:consumeOpener()
-	self:skipWhitespace()
-	self:parseWord()
-	self:skipWhitespace()
-	definition.name = self:parseWord()
-	self:skipWhitespace()
-	definition.value = self:parseExpression()
-	self:skipWhitespace()
-	self:consumeCloser(closer)
-	
-	return definition
-end
-function Parser:parseSend()
-	local send = self:createTerm("send", {})
-	
-	local closer, opener = self:consumeOpener()
-	self:skipWhitespace()
-	send.receiver = self:parseExpression()
-	self:skipWhitespace()
-	send.message = self:parseWord()
-	
-	self.reader:unread(opener)
-	self:consumeTermList(function ()
-		table.insert(send, self:parseExpression())
-	end)
-	
-	return send
+	return self:createTerm("variable", {name = token.value})
 end
 function Parser:parseObject()
-	local object = self:createTerm("object", {})
+	self:read()
 	
-	self:consumeTermList(function ()
-		table.insert(object, self:parseObjectElement())
-	end)
+	local object = self:createTerm("object")
+	
+	local token = self:peek()
+	if not token then
+		self:error("Expected object body, got nothing")
+	elseif token.type == "\\" then
+		self:read()
+		table.insert(object, self:parseDecoration())
+	elseif token.type == "]" then
+		return object
+	else
+		table.insert(object, self:parseMethod())
+	end
+	
+	while true do
+		token = self:read()
+		
+		if token.type == "|" then
+			table.insert(object, self:parseMethod())
+		elseif token.type == "\\" then
+			table.insert(object, self:parseDecoration())
+		elseif token.type == "]" then
+			break
+		else
+			self:error("Expected object body, got %q", token.value)
+		end
+	end
 	
 	return object
 end
-function Parser:parseObjectElement()
-	local closer, opener = self:consumeOpener("(")
-	self:skipWhitespace()
-	
-	local chars = self.reader:peek(2)
-	self.reader:unread(opener)
-	
-	if chars == "->" then
-		return self:parseDecoration()
-	end
-	return self:parseMethod()
-end
-function Parser:parseDecoration()
-	local decoration = self:createTerm("decoration")
-	
-	local closer, opener = self:consumeOpener()
-	self:skipWhitespace()
-	self:parseWord()
-	self:skipWhitespace()
-	decoration.target = self:parseExpression()
-	self:skipWhitespace()
-	self:consumeCloser(closer)
-	
-	return decoration
-end
 function Parser:parseMethod()
-	local method = self:createTerm("method")
-	
-	local closer, opener = self:consumeOpener("(")
-	self:skipWhitespace()
-	
-	-- Parse the first word in the method signature as a message name, and the rest as parameters
-	local sigCloser, sigOpener = self:consumeOpener("(")
-	self:skipWhitespace()
-	method.message = self:parseWord()
-	self.reader:unread(sigOpener)
-	method.parameters = self:parseParameters()
-	
-	-- Parse the rest of the method as a body
-	self.reader:unread(opener)
+	local method = self:parseMethodSignature()
 	method.body = self:parseBody()
 	
 	return method
 end
-function Parser:parseProcedure()
-	local procedure = self:createTerm("procedure", {})
+function Parser:parseMethodSignature()
+	local method = self:createTerm("method", {parameters = self:createTerm("parameters")})
+	local token = self:read()
+	if not token then
+		self:error("Expected method signature, got nothing")
+	elseif token.type ~= "word" and token.type ~= "message starter" and token.type ~= "operation" then
+		self:error("Expected method signature, got %q", token.value)
+	end
+	local name = token.value
+	method.message = name
 	
-	local closer, opener = self:consumeOpener()
-	self:skipWhitespace()
-	procedure.parameters = self:parseParameters()
-	
-	-- Parse the rest of the procedure as a body
-	self.reader:unread(opener)
-	procedure.body = self:parseBody()
-	
-	return procedure
-end
-function Parser:parseParameters()
-	local parameters = self:createTerm("parameters")
-	
-	self:consumeTermList(function ()
-		table.insert(parameters, self:parseWord())
-	end, "(")
-
-	for i = 1, #parameters - 1 do
-		local param = parameters[i]
-		if param:sub(-3, -1) == "..." then
-			self:error("Expected non-vararg parameter")
+	-- Multiary message
+	if token.type == "message starter" then
+		while true do
+			table.insert(method.parameters, self:parseVariable().name)
+			
+			local token = self:peek()
+			if not token then
+				self:error("Expected method signature, got nothing")
+			end
+			local content = token.value
+			if token.type ~= "message continuer" then
+				break
+			end
+			
+			self:read()
+			method.message = method.message .. content
 		end
+	-- Binary operation
+	elseif token.type == "operation" then
+		method.parameters[1] = self:parseVariable().name
 	end
 	
-	return parameters
+	return method
+end
+function Parser:parseDecoration()
+	return self:createTerm("decoration", {target = self:parseExpression()})
 end
 function Parser:parseBody()
 	local body = self:createTerm("body")
 	
-	self:consumeTermList(function ()
+	local token = self:peek()
+	if not token or self.bodyClosers[token.type] then
+		return body
+	end
+	while true do
 		table.insert(body, self:parseExpression())
-	end)
+		token = self:peek()
+		
+		if token and token.type == "." then
+			self:read()
+			
+			local nextToken = self:peek()
+			if not nextToken or self.bodyClosers[nextToken.type] then
+				break
+			end
+		else
+			break
+		end
+	end
 	
 	return body
 end
-function Parser:parseWord()
-	local word = ""
-	while not self.wordEnders[self.reader:peek()] do
-		word = word .. self.reader:read()
-	end
-	return word
+function Parser:parseExpression()
+	return self:parseExprDefinition(self:parseValue())
 end
-function Parser:parseVariable()
-	local var = self:createTerm("variable", {name = ""})
-	while not self.wordEnders[self.reader:peek()] do
-		var.name = var.name .. self.reader:read()
+function Parser:getPrecedence(token)
+	if self.symbols[token.type] or token.type == "message continuer" then
+		return -1
+	elseif token.type == "definition" then
+		return 0
+	elseif token.type == "message starter" then
+		return 1
+	elseif token.type == "operation" then
+		return 2
+	elseif token.type == "word" then
+		return 3
 	end
-	
-	return var
 end
-function Parser:parseString()
-	local str = self:createTerm("string", {value = ""})
-	local quote = self.reader:read()
+function Parser:parseExprDefinition(value)
+	-- Figure out the message segment. If there is no segment, just return.
+	local message = self:peek()
+	local prec = self:getPrecedence(message)
 	
-	while self.reader:peek() ~= quote do
-		local char = self.reader:read()
-		if char == "\\" then
-			str.value = str.value .. self.reader:read()
-		elseif char == "" then
-			self:error("Expected end of string, got nothing")
-		else
-			str.value = str.value .. char
-		end
+	-- Send it off to other functions if it's higher precedence
+	if prec > 0 then
+		return self:parseExprDefinition(self:parseExprKeywordMsg(value))
+	elseif prec < 0 then
+		return value
 	end
-	self.reader:read()
+	self:read()
 	
-	return str
+	-- Only variables can be on the left-hand side of a definition!
+	if value.type ~= "variable" then
+		self:error("Expected variable name")
+	end
+	
+	-- Get the right-hand side and create the definition
+	-- Use 'parseExprDefinition' here because definition is best right-associative
+	value = self:createTerm("definition", {name = value.name, value = self:parseExprDefinition(self:parseValue())})
+	
+	-- Loop all over again
+	return self:parseExprDefinition(value)
 end
-function Parser:parseNumber()
-	local num = self:createTerm("number", {value = ""})
-	while not self.wordEnders[self.reader:peek()] do
-		local char = self.reader:read()
-		num.value = num.value .. char
-	end
-	num.value = tonumber(num.value)
+function Parser:parseExprKeywordMsg(value)
+	-- Figure out the message segment. If there is no segment, just return.
+	local message = self:peek()
+	local prec = self:getPrecedence(message)
 	
-	if num.value == nil then
-		return self:error("Expected a valid number")
+	-- If this is an operation or unary message, send it off to other functions
+	if prec > 1 then
+		return self:parseExprKeywordMsg(self:parseExprBinaryMsg(value))
+	elseif prec < 1 then
+		return value
+	end
+	self:read()
+	
+	-- Get the right-hand side
+	local nextValue = self:parseExprBinaryMsg(self:parseValue())
+	value = self:createTerm("send", {receiver = value, message = message.value, nextValue})
+	
+	local nextToken = self:peek()
+	while nextToken and nextToken.type == "message continuer" do
+		self:read()
+		value.message = value.message .. nextToken.value
+		table.insert(value, self:parseExprBinaryMsg(self:parseValue()))
+		
+		nextToken = self:peek()
 	end
 	
-	return num
+	-- Loop all over again
+	return self:parseExprKeywordMsg(value)
+end
+function Parser:parseExprBinaryMsg(value)
+	-- Figure out the message segment. If there is no segment, just return.
+	local message = self:peek()
+	local prec = self:getPrecedence(message)
+	
+	-- If this is a unary message, send it off to other functions
+	-- If this is a multiary message, our caller will handle that
+	if prec > 2 then
+		return self:parseExprBinaryMsg(self:parseExprUnaryMsg(value))
+	elseif prec < 2 then
+		return value
+	end
+	self:read()
+	
+	value = self:createTerm("send", {receiver = value, message = message.value, self:parseExprUnaryMsg(self:parseValue())})
+	
+	-- Loop all over again
+	return self:parseExprBinaryMsg(value)
+end
+function Parser:parseExprUnaryMsg(value)
+	-- Figure out the message segment. If there is no segment, just return.
+	local message = self:peek()
+	local prec = self:getPrecedence(message)
+	
+	-- If this is not a unary message, our caller will handle that
+	if prec < 3 then
+		return value
+	end
+	self:read()
+	
+	value = self:createTerm("send", {receiver = value, message = message.value})
+	
+	-- Loop all over again
+	return self:parseExprUnaryMsg(value)
 end

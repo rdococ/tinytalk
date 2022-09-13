@@ -1,36 +1,13 @@
-; Using the visitor pattern to simulate algebraic data types
+"Example defining a list data type using the visitor pattern"
 
-(define list {
-	((cons hd tl) {((match c) (c cons hd tl))})
-	((empty) {((match c) (c empty))})
-})
+List :=
+	[cons: h With: t
+		[match: cases cases cons: h With: t
+		|head h
+		|tail t]
+	|empty
+		[match: cases cases empty]].
 
-(define map [(fn ls)
-	(ls match {
-		((cons hd tl) (list cons (fn : hd) (map : fn tl)))
-		((empty) ls)
-	})
-])
-(define combine [(fn id ls)
-	(ls match {
-		((cons hd tl) (combine : fn (fn : id hd) tl))
-		((empty) id)
-	})
-])
-(define print-all [(ls)
-	(combine : [(_ v)
-		(console print v)
-	] nil ls)
-])
+l := List cons: 1 With: (List cons: 2 With: (List cons: 3 With: empty)).
 
-(define ls (list cons 1 (list cons 2 (list cons 3 (list empty)))))
-(print-all : ls)
-
-(define ls2 (map : [(x) (x * 2)] ls))
-(print-all : ls2)
-
-(console print (combine : [(x y) (x * y)] 1 ls))
-(console print (combine : [(x y) (x * y)] 1 ls2))
-
-(console print (combine : [(x y) (x + y)] 0 ls))
-(console print (combine : [(x y) (x + y)] 0 ls2))
+console print: l tail tail head. "3"

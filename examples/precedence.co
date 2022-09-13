@@ -1,0 +1,20 @@
+"A demonstration of precedence."
+
+a := [message: x With: y 'a message: (', x, ') With: ', y].
+b := [message: x With: y 'b message: ', x, ' With: ', y].
+
+"a message: b message: 'x' With: 'y' With: 'z'
+is parsed as:
+a message: (b message: 'x' With: 'y' With: 'z')"
+console print: (a message: (b message: 'x' With: 'y') With: 'z').
+
+"Binary operators are left-associative"
+console print: 2 + 4 > 3. "true"
+
+"Binary operators have higher precedence than keyword messages, but lower than unary messages"
+console print: (2 max: 4 + 3.5 floor). "7"
+
+"Keyword operators are currently left-associative"
+c := Cell make: 4.5.
+c put: (c min: 5 max: 3). "c put: (c min: 5) max: 3"
+console print: c. "4.5"

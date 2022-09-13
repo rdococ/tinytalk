@@ -1,0 +1,20 @@
+"Example defining a practical data type"
+
+Vector := [makeX: x Y: y
+       a := [+ b
+              Vector makeX: x + b x Y: y + b y
+            |- b
+              Vector makeX: x - b x Y: y - b y
+            |makeString
+              '(', x, ', ', y, ')'
+            |x x
+            |y y]].
+
+v := Vector makeX: 3 Y: 2.
+w := Vector makeX: 5 Y: 4.
+
+console print: v. "(3, 2)"
+console print: w. "(5, 4)"
+
+console print: v + w. "(8, 6)"
+console print: v - w. "(-2, -2)"

@@ -1,31 +1,18 @@
-; Using objects to create infinite streams
+"Example using stream codata"
 
-(define filter [(str fn)
-	(define v (str get))
-	((fn : v) match {
-		((true) {
-			((get) v)
-			((next) (filter : (str next) fn))
-		})
-		((false) (filter : (str next) fn))
-	})
-])
+Nats := [from: n
+          self := [get n
+          |next Nats from: n + 1]].
 
-(define make-nats [(n)
-	{((get) n)
-	 ((next) (make-nats : (n + 1)))}
-])
+filter := [do: str With: fn
+    v := str get.
+    (fn test: v) match: [true [get v | next filter do: (str next) With: fn]
+                        |false filter do: (str next) With: fn]].
 
-(define nats (make-nats : 1))
-(define evens (filter : nats [(n) ((n % 2) = 0)]))
+nats := Nats from: 1.
+console print: nats get. "1"
+console print: nats next get. "2"
 
-(define force [(num str fn)
-	((num <= 0) match {
-		((true))
-		((false) (fn : (str get)) (force : (num - 1) (str next) fn))
-	})
-])
-
-(force : 10 evens [(n)
-	(console print n)
-])
+odds := filter do: nats With: [test: x x % 2 = 1].
+console print: odds get. "1"
+console print: odds next get. "3"

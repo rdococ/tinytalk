@@ -1,0 +1,8 @@
+"Example defining an object and decorating it in an unusual way"
+
+foo := [who 'foo'].
+bar := [\foo | who 'bar' | whoReally 'bar']. "Decorator as first object element"
+
+console print: foo who. "foo"
+console print: bar who. "foo"
+console print: bar whoReally. "bar"

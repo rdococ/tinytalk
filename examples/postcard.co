@@ -1,0 +1,17 @@
+"Colang 2 version of the famous 'Smalltalk on a postcard'"
+
+console error: 'No syntax errors but you still can''t run this!'.
+
+self := [exampleWithNumber: x
+"An object that illustrates every part of Colang 2 syntax, paying
+homage to the original 'Smalltalk on a postcard' syntax that
+inspired it. Colang 2 has less syntax, making this postcard somewhat
+smaller."
+	true and: false not and: (nil isNil) match: [true | false self halt].
+	y := self size + self position.
+	
+	List with: 'a ''banana''' And: 1 And: 1.0 do: [v: each
+		Transcript show: (each type).
+		Transcript show: ' '].
+    x < y
+\halter]

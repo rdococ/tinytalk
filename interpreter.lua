@@ -63,11 +63,13 @@ end
 Interpreter = {}
 Interpreter.__index = Interpreter
 
-Interpreter.stringMethods = copy(noint(string), {
-	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string") end),
+Interpreter.stringMethods = {
+	[","] = chainable(function (int, x, y) return x .. int:runMethod(y, "makeString") end),
 	
 	size = function (int, s) return #s end,
-	at = function (int, s, n) return s:sub(n, n) end,
+	["at:"] = function (int, s, n) return s:sub(n, n) end,
+	
+	["from:To:"] = noint(string.sub),
 	
 	["<"] = function (int, x, y) return x < y end,
 	["="] = function (int, x, y) return x == y end,
@@ -76,20 +78,22 @@ Interpreter.stringMethods = copy(noint(string), {
 	["<="] = function (int, x, y) return x <= y end,
 	[">="] = function (int, x, y) return x >= y end,
 	
-	["as-string"] = function (int, s) return s end,
-	["as-number"] = noint(tonumber)
-})
-Interpreter.numberMethods = copy(noint(math), {
-	["+"] = chainable(function (int, x, y) return x + int:runMethod(y, "as-number") end, 0),
-	["-"] = chainable(function (int, x, y) return x - int:runMethod(y, "as-number") end, 0),
-	["*"] = chainable(function (int, x, y) return x * int:runMethod(y, "as-number") end, 1),
-	["/"] = chainable(function (int, x, y) return x / int:runMethod(y, "as-number") end, 1),
-	["^"] = chainable(function (int, x, y) return x ^ int:runMethod(y, "as-number") end, 1),
-	["%"] = function (int, x, y) return x % int:runMethod(y, "as-number") end,
+	makeString = function (int, s) return s end,
+	makeNumber = noint(tonumber),
 	
-	[".."] = chainable(function (int, x, y) return x .. int:runMethod(y, "as-string") end),
+	type = noint(type)
+}
+Interpreter.numberMethods = {
+	["+"] = chainable(function (int, x, y) return x + int:runMethod(y, "makeNumber") end, 0),
+	["-"] = chainable(function (int, x, y) return x - int:runMethod(y, "makeNumber") end, 0),
+	["*"] = chainable(function (int, x, y) return x * int:runMethod(y, "makeNumber") end, 1),
+	["/"] = chainable(function (int, x, y) return x / int:runMethod(y, "makeNumber") end, 1),
+	["^"] = chainable(function (int, x, y) return x ^ int:runMethod(y, "makeNumber") end, 1),
+	["%"] = function (int, x, y) return x % int:runMethod(y, "makeNumber") end,
 	
-	negated = function (int, x) return -x end,
+	[","] = chainable(function (int, x, y) return x .. int:runMethod(y, "makeString") end),
+	
+	negate = function (int, x) return -x end,
 	
 	["<"] = function (int, x, y) return x < y end,
 	["="] = function (int, x, y) return x == y end,
@@ -98,34 +102,47 @@ Interpreter.numberMethods = copy(noint(math), {
 	["<="] = function (int, x, y) return x <= y end,
 	[">="] = function (int, x, y) return x >= y end,
 	
-	["as-string"] = noint(tostring),
-	["as-number"] = function (int, s) return s end
-})
+	floor = noint(math.floor),
+	ceiling = noint(math.ceil),
+	round = function (int, x) return math.ceil(x - 0.5) end,
+	
+	["max:"] = noint(math.max),
+	["min:"] = noint(math.min),
+	
+	makeString = noint(tostring),
+	makeNumber = function (int, s) return s end,
+	
+	type = noint(type)
+}
 Interpreter.booleanMethods = {
-	match = function (int, bool, clause)
+	["match:"] = function (int, bool, clause)
 		return int:runMethod(clause, bool and "true" or "false")
 	end,
 	
-	["and"] = chainable(function (int, x, y) return x and y end, true),
-	["or"] = chainable(function (int, x, y) return x or y end, false),
+	["and:"] = chainable(function (int, x, y) return x and y end, true),
+	["or:"] = chainable(function (int, x, y) return x or y end, false),
 	["not"] = function (int, x) return not x end,
 	
 	["="] = function (int, x, y) return x == y end,
 	
-	["as-string"] = function (int, b) return b and "true" or "false" end
+	makeString = function (int, b) return b and "true" or "false" end,
+	
+	type = noint(type)
 }
 Interpreter.nilMethods = {
-	match = function (int, v, clause)
+	["match:"] = function (int, v, clause)
 		return int:runMethod(clause, "nil")
 	end,
 	
-	["and"] = chainable(function (int, x, y) return x and y end, true),
-	["or"] = chainable(function (int, x, y) return x or y end, false),
+	["and:"] = chainable(function (int, x, y) return x and y end, true),
+	["or:"] = chainable(function (int, x, y) return x or y end, false),
 	["not"] = function (int, x) return not x end,
 	
 	["="] = function (int, x, y) return x == y end,
 	
-	["as-string"] = function (int, b) return "nil" end
+	makeString = function (int, b) return "nil" end,
+	
+	type = noint(type)
 }
 
 Interpreter.globals = {
@@ -133,25 +150,26 @@ Interpreter.globals = {
 	["false"] = false,
 	infinity = math.huge,
 	console = builtin({
-		print = function (int, self, ...)
-			local values = mapArgs({...}, function (obj)
-				return int:runMethod(obj, "as-string")
-			end)
-			return print(table.unpack(values, 1, values.n))
+		["print:"] = function (int, self, obj)
+			return print(int:runMethod(obj, "makeString"))
+		end,
+		["error:"] = function (int, self, obj)
+			return error(int:runMethod(obj, "makeString"))
 		end,
 		read = function (int, self) return io.read() end
 	}),
-	cell = builtin({
-		new = function (int, self, value)
+	Cell = builtin({
+		make = function (int, self, value)
 			return builtin({
-				["$"] = function (int, self) return value end,
-				[":="] = function (int, self, x) value = x end
+				["get"] = function (int, self) return value end,
+				["put:"] = function (int, self, x) value = x end
 			}, function (int, self) return value end)
-		end
-	}),
-	count = builtin({
-		[":"] = function (int, self, ...)
-			return select("#", ...)
+		end,
+		["make:"] = function (int, self, value)
+			return builtin({
+				["get"] = function (int, self) return value end,
+				["put:"] = function (int, self, x) value = x end
+			}, function (int, self) return value end)
 		end
 	})
 }
@@ -173,7 +191,7 @@ end
 function Interpreter:runTerm(term, context)
 	self.term = term
 	if term.type == "body" then
-		local result = nil
+		local result = {nil}
 		for _, subterm in ipairs(term) do
 			result = table.pack(self:runTerm(subterm, context))
 		end
@@ -181,12 +199,13 @@ function Interpreter:runTerm(term, context)
 	elseif term.type == "definition" then
 		context[term.name] = self:runTerm(term.value, context)
 		return context[term.name]
-	elseif term.type == "object" or term.type == "procedure" then
+	elseif term.type == "object" then
 		return {type = "instance", definition = term, context = context}
 	elseif term.type == "send" then
 		local receiver = self:runTerm(term.receiver, context)
 		local message = term.message
 		local arguments = mapArgs(term, function (v)
+			if v == nil then return end
 			return self:runTerm(v, context)
 		end)
 		
@@ -198,7 +217,7 @@ function Interpreter:runTerm(term, context)
 			return table.unpack(value)
 		end
 		return value
-	elseif term.type == "string" or term.type == "number" then
+	elseif term.type == "literal" then
 		return term.value
 	end
 end
@@ -207,19 +226,12 @@ function Interpreter:findMethod(receiver, message)
 		if receiver.type == "instance" then
 			local definition, context = receiver.definition, receiver.context
 			
-			-- Look up method in receiver definition
-			if definition.type == "procedure" then
-				if message == ":" then
-					return receiver, definition
-				end
-			else
-				for _, method in ipairs(definition) do
-					if method.type == "method" and method.message == message then
-						return receiver, method
-					elseif method.type == "decoration" then
-						local decoratee, method = self:findMethod(self:runTerm(method.target, context), message)
-						if method then return decoratee, method end
-					end
+			for _, method in ipairs(definition) do
+				if method.type == "method" and method.message == message then
+					return receiver, method
+				elseif method.type == "decoration" then
+					local decoratee, method = self:findMethod(self:runTerm(method.target, context), message)
+					if method then return decoratee, method end
 				end
 			end
 		elseif receiver.type == "builtin" then
@@ -253,12 +265,12 @@ function Interpreter:runMethod(receiver, message, ...)
 		-- Construct a copy of the receiver's context and assign parameters
 		local context = copy(receiver.context)
 		for i, param in ipairs(method.parameters) do
-			if i == #method.parameters and param:sub(-3, -1) == "..." then
+			--[[if i == #method.parameters and param:sub(-3, -1) == "..." then
 				context[param:sub(1, -4)] = select(i, ...)
 				context[param] = {type = "tuple", n = select("#", ...) - i + 1, select(i, ...)}
-			else
+			else]]
 				context[param] = select(i, ...)
-			end
+			--end
 		end
 		
 		-- Run the method body in the new context
