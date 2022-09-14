@@ -29,7 +29,6 @@ Lexer.digits = set("0123456789")
 Lexer.messageStarters = set("abcdefghijklmnopqrstuvwxyz_")
 Lexer.messageContinuers = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 Lexer.operationStarters = set("+-*/%^<=>,")
-Lexer.bodyClosers = set(")]|", true)
 
 function Lexer:new()
 	return setmetatable({}, self)
@@ -96,7 +95,7 @@ function Lexer:lexToken()
 	elseif self.messageStarters[char] or self.messageContinuers[char] or self.operationStarters[char] or char == ":" then
 		return self:lexWordlikeToken()
 	elseif self.symbols[char] then
-		return self:createTerm(self.reader:read())
+		return self:lexSymbol()
 	elseif char == "" then
 		return
 	end
@@ -177,9 +176,20 @@ function Lexer:lexWordlikeToken()
 	word.value = table.concat(chars)
 	if word.value == ":=" then
 		word.type = "definition"
+		word.value = nil
 	elseif self.operationStarters[word.value:sub(1, 1)] then
 		word.type = "operation"
 	end
 	
 	return word
+end
+function Lexer:lexSymbol()
+	local char = self.reader:peek()
+	
+	if char == "." and self.reader:peek(2) == "." and self.reader:peek(3) == "." then
+		self.reader:read(3)
+		return self:createTerm("decoration")
+	end
+	
+	return self:createTerm(self.reader:read())
 end

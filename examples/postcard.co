@@ -14,4 +14,4 @@ smaller."
 		Transcript show: (each type).
 		Transcript show: ' '].
     x < y
-\halter]
+| ...halter]

@@ -95,33 +95,34 @@ function Parser:parseObject()
 	local object = self:createTerm("object")
 	
 	local token = self:peek()
-	if not token then
-		self:error("Expected object body, got nothing")
-	elseif token.type == "\\" then
-		self:read()
-		table.insert(object, self:parseDecoration())
-	elseif token.type == "]" then
+	if token.type == "]" then
 		self:read()
 		return object
 	else
-		table.insert(object, self:parseMethod())
+		table.insert(object, self:parseObjectElement())
 	end
 	
 	while true do
 		token = self:read()
 		
 		if token.type == "|" then
-			table.insert(object, self:parseMethod())
-		elseif token.type == "\\" then
-			table.insert(object, self:parseDecoration())
+			table.insert(object, self:parseObjectElement())
 		elseif token.type == "]" then
 			break
 		else
-			self:error("Expected object body, got %q", token.type)
+			self:error("Expected object element, got %q", token.type)
 		end
 	end
 	
 	return object
+end
+function Parser:parseObjectElement()
+	local token = self:peek()
+	if token.type == "decoration" then
+		return self:parseDecoration()
+	end
+	
+	return self:parseMethod()
 end
 function Parser:parseMethod()
 	local method = self:parseMethodSignature()
@@ -165,6 +166,7 @@ function Parser:parseMethodSignature()
 	return method
 end
 function Parser:parseDecoration()
+	self:read()
 	return self:createTerm("decoration", {target = self:parseExpression()})
 end
 function Parser:parseBody()

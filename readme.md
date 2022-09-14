@@ -1,4 +1,4 @@
-# Colang 0.2
+# Colang 0.2.1
 
 Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-like syntax, immutable variables by default and a codata-inspired approach to objects.
 
@@ -30,11 +30,11 @@ x negate
 (x)
 
 "Object definition"
-[doWith: x
-	x foo
-|doWith: x And: y
-	x foo: y
-\decoratee]
+[ doWith: x
+    x foo
+| doWith: x And: y
+    x foo: y
+| ...decoratee]
 
 "String literal"
 'abc'
@@ -45,4 +45,6 @@ x negate
 
 ## Semantics
 
-All values are objects. An object consists of a set of methods with zero or more parameters. Sending a message to an object runs the method with that name, or throws an error if there is no such method. Objects with decoration expressions will forward messages to decorated objects.
+All values are objects. An object consists of a set of methods with zero or more parameters. Sending a message to an object runs the method with that name, or throws an error if there is no such method.
+
+Objects with decoration expressions will forward messages to decorated objects. Decoration expressions can be intermixed with methods and the ordering matters for dispatch, with earlier definitions taking priority. They are re-evaluated each time the method lookup reaches them.

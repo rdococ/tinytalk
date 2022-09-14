@@ -13,7 +13,7 @@ LoggedCounter := [make: counter
     [increment: n
       console print: 'Logged counter incremented by ' , n.
       counter increment: n.
-    \counter]].
+    | ...counter]].
 
 counter := LoggedCounter make: Counter make.
 counter increment: 3.
