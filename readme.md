@@ -1,6 +1,14 @@
 # Colang 0.2.1
 
-Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-like syntax, immutable variables by default and a codata-inspired approach to objects.
+Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-inspired syntax.
+
+## Semantics
+
+* An object is a set of methods.
+* You can send a message to an object, which runs the matching method.
+* Objects can take on the methods of other objects.
+* You can define variables to hold intermediary values.
+* A method body is a list of expressions that returns the last expression's value.
 
 ## Syntax
 
@@ -8,8 +16,8 @@ Colang is a minimalistic, purely object-oriented toy programming language with S
 "Comment"
 
 "Body of statements"
-zombie attackedWith: player wieldedItem By: player.
-player wieldedItem degrade: 1.
+zombie attackedWith: player weapon By: player.
+player weapon degrade: 1.
 
 "Variable access"
 abc
@@ -18,23 +26,28 @@ abc
 abc := x
 
 "Keyword message"
-x doWith: y And: z
+player attackedWith: zombie jaw By: zombie
 
-"Binary operator message"
+"Operator message"
 x + y
 
 "Unary message"
-x negate 
+x negate
 
 "Parentheses"
 (x)
 
 "Object definition"
-[ doWith: x
-    x foo
-| doWith: x And: y
-    x foo: y
-| ...decoratee]
+[callTo: person
+    person barkedAt
+|fetch: ball For: person
+    ball fetched.
+    person takeItem: ball.]
+
+"Object decoration"
+[makeNoise
+    console print: 'Cockadoodle doo!'
+|...bird]
 
 "String literal"
 'abc'
@@ -42,9 +55,3 @@ x negate
 "Number literal"
 1.23
 ```
-
-## Semantics
-
-All values are objects. An object consists of a set of methods with zero or more parameters. Sending a message to an object runs the method with that name, or throws an error if there is no such method.
-
-Objects with decoration expressions will forward messages to decorated objects. Decoration expressions can be intermixed with methods and the ordering matters for dispatch, with earlier definitions taking priority. They are re-evaluated each time the method lookup reaches them.
