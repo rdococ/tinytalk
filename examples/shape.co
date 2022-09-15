@@ -1,0 +1,65 @@
+"Constructing graphics combinator objects with 'contains:' and 'bounds' methods"
+
+Square :=
+  [at: position WithSize: size
+    [contains: point
+           point x >= position x
+      and: point x <= (position x + size)
+      and: point y >= position y
+      and: point y <= (position y + size)
+    |bounds
+      [origin  position
+      |corner  [x  position x + size
+               |y  position y + size]]]].
+
+Circle :=
+  [at: position WithRadius: radius
+    [contains: point
+      xDist := point x - position x.
+      yDist := point y - position y.
+      (xDist * xDist + (yDist * yDist)) <= (radius * radius)
+    |bounds
+      [origin  [x  position x - radius |y  position y - radius]
+      |corner  [x  position x + radius |y  position y + radius]]]].
+
+Union :=
+  [of: shapeA And: shapeB
+    [contains: point  shapeA contains: point or: (shapeB contains: point)
+    |bounds
+      [origin  [x  shapeA bounds origin x min: shapeB bounds origin x
+               |y  shapeA bounds origin y min: shapeB bounds origin y]
+      |corner  [x  shapeA bounds corner x max: shapeB bounds corner x
+               |y  shapeA bounds corner y max: shapeB bounds corner y]]]].
+
+Intersection :=
+  [of: shapeA And: shapeB
+    [contains: point  shapeA contains: point and: (shapeB contains: point)
+    |bounds
+      [origin  [x  shapeA bounds origin x max: shapeB bounds origin x
+               |y  shapeA bounds origin y max: shapeB bounds origin y]
+      |corner  [x  shapeA bounds corner x min: shapeB bounds corner x
+               |y  shapeA bounds corner y min: shapeB bounds corner y]]]].
+
+Looper :=
+  [from: a To: b Do: body
+    a <= b match:
+      [true
+        body with: a.
+        Looper from: a + 1 To: b Do: body.
+      |false]].
+
+Drawer :=
+  [draw: shape
+    bounds := shape bounds.
+    Looper from: bounds origin y To: bounds corner y Do: [with: y
+      Looper from: bounds origin x To: bounds corner x Do: [with: x
+        shape contains: [x x |y y] match:
+          [true   console write: '#'
+          |false  console write: ' ']].
+      console print: '']].
+
+Drawer draw:
+  (Intersection of:
+    (Circle at: [x 0 |y 0] WithRadius: 5)
+  And:
+    (Square at: [x -10 |y -10] WithSize: 10)).
