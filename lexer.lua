@@ -129,7 +129,7 @@ function Lexer:lexString()
 end
 function Lexer:lexNumber()
 	local number = self:createTerm("literal")
-	local chars = {}
+	local chars = {self.reader:read()}
 	local dotHit = false
 	
 	while true do
