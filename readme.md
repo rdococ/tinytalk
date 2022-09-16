@@ -10,6 +10,16 @@ Colang is a minimalistic, purely object-oriented toy programming language with S
 * You can define variables to hold intermediary values.
 * A method body is a list of expressions that returns the last expression's value.
 
+## Utilities
+
+There are several builtin objects.
+
+* Number, string, boolean and nil implement a variety of operators.
+* Booleans and nil implement `match:`, sending to it `true`, `false` or `nil`.
+* The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
+* The `Cell` factory can `make:` new mutable cells that can `get` or `set:` their value.
+* The `library` can `fetch:` Colang objects from the filesystem.
+
 ## Syntax
 
 ```
