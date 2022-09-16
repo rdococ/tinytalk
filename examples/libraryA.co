@@ -1,0 +1,11 @@
+"Example testing the library system"
+
+console print: 'libraryA.co loaded.'.
+
+List :=
+	[cons: h With: t
+		[match: cases cases cons: h With: t
+		|head h
+		|tail t]
+	|empty
+		[match: cases cases empty]].

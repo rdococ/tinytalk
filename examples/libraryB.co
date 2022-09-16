@@ -1,0 +1,9 @@
+"Example testing the library system"
+
+"Should only load file once"
+_ := library fetch: './examples/libraryA.co'.
+List := library fetch: './examples/libraryA.co'.
+
+l := List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty)).
+
+console print: l tail tail head. "3"

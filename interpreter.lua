@@ -174,11 +174,26 @@ Interpreter.globals = {
 				["put:"] = function (int, self, x) value = x end
 			}, function (int, self) return value end)
 		end
+	}),
+	library = builtin({
+		["fetch:"] = function (int, self, filename)
+			filename = int:runMethod(filename, "makeString")
+			if int.library[filename] then return int.library[filename] end
+			
+			local file, err = io.open(filename)
+			if not file then self:error(err) end
+			
+			local content = file:read("*a")
+			file:close()
+			
+			int.library[filename] = int:run(Parser:new():parse(Lexer:new():lex(content)))
+			return int.library[filename]
+		end
 	})
 }
 
 function Interpreter:new()
-	return setmetatable({}, self)
+	return setmetatable({library = {}}, self)
 end
 
 function Interpreter:run(term)
