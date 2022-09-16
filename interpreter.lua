@@ -157,7 +157,7 @@ Interpreter.globals = {
 			return io.write(int:runMethod(obj, "makeString"))
 		end,
 		["error:"] = function (int, self, obj)
-			return error(int:runMethod(obj, "makeString"))
+			return self:error(int:runMethod(obj, "makeString"))
 		end,
 		read = function (int, self) return io.read() end
 	}),
