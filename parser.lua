@@ -95,7 +95,9 @@ function Parser:parseObject()
 	local object = self:createTerm("object")
 	
 	local token = self:peek()
-	if token.type == "]" then
+	if not token then
+		return self:error("Expected object element, got nothing")
+	elseif token.type == "]" then
 		self:read()
 		return object
 	else
@@ -105,7 +107,9 @@ function Parser:parseObject()
 	while true do
 		token = self:read()
 		
-		if token.type == "|" then
+		if not token then
+			return self:error("Expected object element, got nothing")
+		elseif token.type == "|" then
 			table.insert(object, self:parseObjectElement())
 		elseif token.type == "]" then
 			break
@@ -198,7 +202,13 @@ function Parser:parseExpression()
 	return self:parseExprDefinition(self:parseValue())
 end
 function Parser:getPrecedence(token)
-	if self.bodyClosers[token.type] or token.type == "." or token.type == "message continuer" then
+	if not token then
+		return -4
+	elseif self.bodyClosers[token.type] then
+		return -3
+	elseif token.type == "." then
+		return -2
+	elseif token.type == "message continuer" then
 		return -1
 	elseif token.type == "definition" then
 		return 0
