@@ -18,7 +18,7 @@ There are several builtin objects.
 * Booleans and nil implement `match:`, sending to it `true`, `false` or `nil`.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
 * The `Cell` factory can `make:` new mutable cells that can `get` their value or `put:` a new one.
-* The `library` can `fetch:` Colang objects from the filesystem.
+* The `system` can `fetch:` Colang objects from the filesystem or `run:` them multiple times.
 
 ## Syntax
 

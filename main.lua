@@ -5,18 +5,17 @@ dofile("./lexer.lua")
 dofile("./parser.lua")
 dofile("./interpreter.lua")
 
-local function getCode()
-	print("Enter filename:")
-	local file = io.open(("./examples/%s"):format(io.read()))
-	local content = file:read("*a")
-	file:close()
+local interpreter = Interpreter:new()
+local env = Interpreter:createEnv()
+
+while true do
+	local code = io.read("*l")
+	local status, err = pcall(function ()
+		return interpreter:run(Parser:new():parse(Lexer:new():lex(code)), env)
+	end)
 	
-	return content
+	local printStatus, err = pcall(function ()
+		return interpreter:runMethod(err, "makeString")
+	end)
+	print(err)
 end
-
-local r
-r = Lexer:new():lex(getCode())
-r = Parser:new():parse(r)
-
-local result = Interpreter:new():run(r)
-print(("\n%s"):format(result))

@@ -175,19 +175,30 @@ Interpreter.globals = {
 			}, function (int, self) return value end)
 		end
 	}),
-	library = builtin({
+	system = builtin({
 		["fetch:"] = function (int, self, filename)
 			filename = int:runMethod(filename, "makeString")
 			if int.library[filename] then return int.library[filename] end
 			
 			local file, err = io.open(filename)
-			if not file then self:error(err) end
+			if not file then int:error(err) end
 			
 			local content = file:read("*a")
 			file:close()
 			
 			int.library[filename] = int:run(Parser:new():parse(Lexer:new():lex(content)))
 			return int.library[filename]
+		end,
+		["run:"] = function (int, self, filename)
+			filename = int:runMethod(filename, "makeString")
+			
+			local file, err = io.open(filename)
+			if not file then int:error(err) end
+			
+			local content = file:read("*a")
+			file:close()
+			
+			return int:run(Parser:new():parse(Lexer:new():lex(content)))
 		end
 	})
 }
@@ -196,8 +207,11 @@ function Interpreter:new()
 	return setmetatable({library = {}}, self)
 end
 
-function Interpreter:run(term)
-	return self:runTerm(term, copy(self.globals))
+function Interpreter:createEnv()
+    return copy(self.globals)
+end
+function Interpreter:run(term, env)
+	return self:runTerm(term, env or Interpreter:createEnv())
 end
 function Interpreter:error(err, ...)
 	if self.term then

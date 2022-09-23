@@ -1,4 +1,4 @@
-"Example testing the library system"
+"Example testing the object fetching system"
 
 console print: 'libraryA.co loaded.'.
 
