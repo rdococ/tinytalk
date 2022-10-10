@@ -1,5 +1,5 @@
 "Constructing graphics combinator objects and drawing them to the console
-shapesTester test"
+shapeTester test"
 
 system require: './repository/Vector.co'.
 
@@ -46,7 +46,7 @@ Drawer :=
           |false  console write: ' ']].
       console print: '']].
 
-shapesTester :=
+shapeTester :=
   [test
     Drawer draw:
       (Union of:
