@@ -86,9 +86,13 @@ function Compiler:createEnv()
     end
     primitives.number["larger:"] = math.max
     primitives.number["smaller:"] = math.min
-    primitives.number.roundedDown = math.floor
-    primitives.number.roundedUp = math.ceil
-    
+    primitives.number.floor = math.floor
+    primitives.number.ceil = math.ceil
+    primitives.number.abs = math.abs
+    primitives.number.sqrt = math.sqrt
+    primitives.number.sin = math.sin
+    primitives.number.cos = math.cos
+    primitives.number.tan = math.tan
 
     primitives.string = {}
     primitives.string.makeNumber = tonumber
@@ -102,7 +106,7 @@ function Compiler:createEnv()
     primitives.string["get:"] = function (self, i)
         return self:sub(lookup(i, "makeNumber")(), lookup(i, "makeNumber")())
     end
-    primitives.string["getSubstring:"] = function (self, i, j)
+    primitives.string["slice:"] = function (self, i, j)
         return self:sub(lookup(i, "makeNumber")(), lookup(j, "makeNumber")())
     end
 
@@ -255,6 +259,7 @@ function Compiler:createEnv()
         
         vartrue = true,
         varfalse = false,
+        varnl = "\n",
         
         varconsole = console,
         varCell = Cell,
