@@ -1,4 +1,5 @@
-"Constructing graphics combinator objects with 'contains:' and 'bounds' methods"
+"Constructing graphics combinator objects with 'contains:' and 'bounds' methods
+Fun task: Rewrite to be much shorter using ./repository/Vector.co"
 
 Square :=
   [at: position WithSize: size
@@ -26,40 +27,42 @@ Union :=
   [of: shapeA And: shapeB
     [contains: point  shapeA contains: point or: (shapeB contains: point)
     |bounds
-      [origin  [x  shapeA bounds origin x min: shapeB bounds origin x
-               |y  shapeA bounds origin y min: shapeB bounds origin y]
-      |corner  [x  shapeA bounds corner x max: shapeB bounds corner x
-               |y  shapeA bounds corner y max: shapeB bounds corner y]]]].
+      [origin  [x  shapeA bounds origin x smaller: shapeB bounds origin x
+               |y  shapeA bounds origin y smaller: shapeB bounds origin y]
+      |corner  [x  shapeA bounds corner x larger:  shapeB bounds corner x
+               |y  shapeA bounds corner y larger:  shapeB bounds corner y]]]].
 
 Intersection :=
   [of: shapeA And: shapeB
     [contains: point  shapeA contains: point and: (shapeB contains: point)
     |bounds
-      [origin  [x  shapeA bounds origin x max: shapeB bounds origin x
-               |y  shapeA bounds origin y max: shapeB bounds origin y]
-      |corner  [x  shapeA bounds corner x min: shapeB bounds corner x
-               |y  shapeA bounds corner y min: shapeB bounds corner y]]]].
+      [origin  [x  shapeA bounds origin x larger:  shapeB bounds origin x
+               |y  shapeA bounds origin y larger:  shapeB bounds origin y]
+      |corner  [x  shapeA bounds corner x smaller: shapeB bounds corner x
+               |y  shapeA bounds corner y smaller: shapeB bounds corner y]]]].
 
-Looper :=
+For :=
   [from: a To: b Do: body
     a <= b match:
       [true
         body with: a.
-        Looper from: a + 1 To: b Do: body.
+        For from: a + 1 To: b Do: body.
       |false]].
 
 Drawer :=
   [draw: shape
     bounds := shape bounds.
-    Looper from: bounds origin y To: bounds corner y Do: [with: y
-      Looper from: bounds origin x To: bounds corner x Do: [with: x
+    For from: bounds origin y To: bounds corner y Do: [with: y
+      For from: bounds origin x To: bounds corner x Do: [with: x
         shape contains: [x x |y y] match:
           [true   console write: '#'
           |false  console write: ' ']].
       console print: '']].
 
-Drawer draw:
-  (Intersection of:
-    (Circle at: [x 0 |y 0] WithRadius: 5)
-  And:
-    (Square at: [x -10 |y -10] WithSize: 10)).
+shapesTester :=
+  [test
+    Drawer draw:
+      (Union of:
+        (Circle at: [x 0 |y 0] WithRadius: 5)
+      And:
+        (Square at: [x -10 |y -10] WithSize: 10))].

@@ -1,0 +1,13 @@
+Vector := [makeX: x Y: y
+            a := [+ b          Vector makeX: x + b x Y: y + b y
+                 |- b          Vector makeX: x - b x Y: y - b y
+                 |size         x * x + (y * y)
+                 |makeString   'Vector(', x, ', ', y, ')'
+                 |x            x
+                 |y            y
+                 |< b          a x < b x and: a y < b y
+                 |= b          a x = b x and: a y = b y
+                 "The redirection methods below could be factored into their own object"
+                 |> b          b < a
+                 |<= b         (b < a) not
+                 |>= b         (a < b) not]].

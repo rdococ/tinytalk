@@ -1,14 +1,33 @@
 --[[
-Token types:
-"word": Variable or unary message
-"operation": Binary operation
-"message starter": Start of multiary message
-"message continuer": Middle segment in multiary message
-"literal": Literal value
-"[", "]", "(", ")", "|", "\", ".": Syntactic constructs
+An implementation for a purely object-oriented toy programming language.
+Copyright (C) 2022 rdococ
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
-local function set(str, empty)
+--[[
+TOKEN ATTRIBUTES
+    type
+        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
+    line
+    value
+]]
+
+local Lexer = {}
+Lexer.__index = Lexer
+
+local function charSet(str, empty)
 	local set = {}
 	for i = 1, #str do
 		set[str:sub(i, i)] = true
@@ -17,179 +36,163 @@ local function set(str, empty)
 	return set
 end
 
-Lexer = {}
-Lexer.__index = Lexer
-
-Lexer.whitespace = set(" \n\t\"")
-Lexer.wordChars = set("abcdefghijklmnopqrstuvwxyz_+-*/%^<=>ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-Lexer.symbols = set("[]()|\\.")
-Lexer.numberStarters = set("0123456789-")
-Lexer.digits = set("0123456789")
-
-Lexer.messageStarters = set("abcdefghijklmnopqrstuvwxyz_")
-Lexer.messageContinuers = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-Lexer.operationStarters = set("+-*/%^<=>,")
-
-function Lexer:new()
-	return setmetatable({}, self)
+function Lexer:new(reader)
+	return setmetatable({tokens = {}, index = 0, reader = reader}, self)
 end
-
-function Lexer:lex(code)
-	self.reader = Reader:new(code)
-	self.tokens = {}
-	
-	while true do
-		local token = self:lexToken()
-		if token == nil then break end
-		table.insert(self.tokens, token)
-	end
-	
-	return self.tokens
+function Lexer:reset()
+    self.tokens, self.index = {}, 0
+    self.reader:reset()
+end
+function Lexer:peek()
+    if self.tokens[self.index + 1] then return self.tokens[self.index + 1] end
+    
+    for _, case in ipairs(self.cases) do
+        local token = case(self)
+        if token == true then
+            return self:peek()
+        elseif token then
+            self.tokens[self.index + 1] = token
+            return token
+        end
+    end
+    
+    self:error("Expected valid token")
+end
+function Lexer:read()
+    local token = self:peek()
+    self.index = self.index + 1
+    return token
+end
+function Lexer:line()
+    return self.reader:line()
+end
+function Lexer:token(token)
+    token.line = self:line()
+    return token
 end
 function Lexer:error(err, ...)
-	if self.reader then
-		return error(("Line %s: %s"):format(self.reader:line(), err:format(...)))
-	end
-	return error(err:format(...))
+    return error(("Line %s: %s"):format(self:line(), err:format(...)))
 end
 
-function Lexer:createTerm(type, attr)
-	local attributes = attr or {}
-	attributes.type, attributes.line = type, self.reader:line()
-	return attributes
+local whitespaceChars = charSet(" \r\n\t\"")
+
+local numberStartChars = charSet("0123456789-")
+local numberChars = charSet("0123456789")
+
+local wordStartChars = charSet("abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+local msgopenStartChars = charSet("abcdefghijklmnopqrstuvwxyz_")
+local msgnextStartChars = charSet("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+local wordNextChars = charSet("abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+local binopChars = charSet("+-*/%^<=>,")
+
+local function strCase(str, type)
+    return function (self)
+        if self.reader:peek(1, #str) ~= str then return end
+        self.reader:read(#str)
+        return self:token {type = type}
+    end
 end
-function Lexer:add(token)
-	table.insert(self.tokens, token)
+local function addCase(fn)
+    table.insert(Lexer.cases, fn)
 end
 
-function Lexer:lexToken()
-	local char
-	
-	while true do
-		char = self.reader:peek()
-		if char == "\"" then
-			self.reader:read()
-			while true do
-				char = self.reader:read()
-				if char == "" then
-					self:error("Expected end of comment, got \"\"")
-				elseif char == "\"" then
-					if self.reader:peek() == "\"" then
-						self.reader:read()
-					else
-						break
-					end
-				end
-			end
-		elseif self.whitespace[char] then
-			self.reader:read()
-		else
-			break
-		end
-	end
-	
-	if char == "'" then
-		return self:lexString()
-	elseif self.digits[char] or self.numberStarters[char] and self.digits[self.reader:peek(2)] then
-		return self:lexNumber()
-	elseif self.messageStarters[char] or self.messageContinuers[char] or self.operationStarters[char] or char == ":" then
-		return self:lexWordlikeToken()
-	elseif self.symbols[char] then
-		return self:lexSymbol()
-	elseif char == "" then
-		return
-	end
-	
-	self:error("Expected valid token, got %q", char)
-end
+Lexer.cases = {}
+addCase(function (self)
+    if not numberStartChars[self.reader:peek()] then return end
+    if self.reader:peek() == "-" and not numberChars[self.reader:peek(2)] then return end
+    
+    local value = self.reader:read()
+    
+    while numberChars[self.reader:peek()] do
+        value = value .. self.reader:read()
+    end
+    
+    if self.reader:peek() == "." and numberChars[self.reader:peek(2)] then
+        value = value .. self.reader:read()
+        while numberChars[self.reader:peek()] do
+            value = value .. self.reader:read()
+        end
+    end
+    
+    value = tonumber(value)
+    
+    return self:token {type = "literal", value = value}
+end)
+addCase(function (self)
+    if self.reader:peek() ~= "'" then return end
+    self.reader:read()
+    local value = ""
+    
+    while self.reader:peek() ~= "" and self.reader:peek() ~= "'" do
+        if self.reader:peek() == "\\" then
+            self.reader:read()
+            value = value .. self.reader:read()
+        else
+            value = value .. self.reader:read()
+        end
+    end
+    
+    self.reader:read()
+    
+    return self:token {type = "literal", value = value}
+end)
+addCase(function (self)
+    if not wordStartChars[self.reader:peek()] then return end
+    local value = self.reader:read()
+    
+    while wordNextChars[self.reader:peek()] do
+        value = value .. self.reader:read()
+    end
+    if self.reader:peek() == ":" then
+        value = value .. self.reader:read()
+        
+        local char = value:sub(1, 1)
+        if msgopenStartChars[char] then
+            return self:token {type = "msgopen", value = value}
+        end
+        if msgnextStartChars[char] then
+            return self:token {type = "msgnext", value = value}
+        end
+    end
+    
+    return self:token {type = "word", value = value}
+end)
+addCase(function (self)
+    if not binopChars[self.reader:peek()] then return end
+    local value = self.reader:read()
+    
+    while binopChars[self.reader:peek()] do
+        value = value .. self.reader:read()
+    end
+    
+    return self:token {type = "binop", value = value}
+end)
+addCase(function (self)
+    if not whitespaceChars[self.reader:peek()] then return end
+    
+    while whitespaceChars[self.reader:peek()] do
+        local char = self.reader:read()
+        if char == "\"" then
+            while true do
+                char = self.reader:read()
+                if char == "" or char == "\"" then break end
+            end
+        end
+    end
+    
+    return true
+end)
+addCase(function (self)
+    if self.reader:peek() ~= "" then return end
+    return self:token {type = "eof"}
+end)
+addCase(strCase("...", "objdeco"))
+addCase(strCase("[", "objopen"))
+addCase(strCase("|", "objnext"))
+addCase(strCase("]", "objclose"))
+addCase(strCase(".", "statclose"))
+addCase(strCase("(", "expropen"))
+addCase(strCase(")", "exprclose"))
+addCase(strCase(":=", "define"))
 
-function Lexer:lexString()
-	local term = self:createTerm("literal")
-	local chars = {}
-	
-	local quote = self.reader:read()
-	while true do
-		local char = self.reader:read()
-		
-		if char == "\\" then
-			table.insert(chars, self.reader:read())
-		elseif char == quote then
-			if self.reader:peek() == quote then
-				table.insert(chars, self.reader:read())
-			else
-				break
-			end
-		else
-			table.insert(chars, char)
-		end
-	end
-	
-	term.value = table.concat(chars)
-	return term
-end
-function Lexer:lexNumber()
-	local number = self:createTerm("literal")
-	local chars = {self.reader:read()}
-	local dotHit = false
-	
-	while true do
-		local char = self.reader:peek()
-		
-		if self.digits[char] then
-			table.insert(chars, self.reader:read())
-		elseif char == "." and not dotHit and self.digits[self.reader:peek(2)] then
-			table.insert(chars, self.reader:read())
-			dotHit = true
-		else
-			break
-		end
-	end
-	
-	local str = table.concat(chars)
-	number.value = tonumber(str)
-	if number.value == nil then
-		return self:error("Expected a valid number, got %q", str)
-	end
-	
-	return number
-end
-function Lexer:lexWordlikeToken()
-	local word = self:createTerm("word")
-	local chars = {}
-	
-	local char = self.reader:read()
-	table.insert(chars, char)
-	
-	while true do
-		char = self.reader:peek()
-		if self.wordChars[char] or char == ":" then
-			table.insert(chars, self.reader:read())
-			if char == ":" then
-				word.type = self.messageContinuers[chars[1]] and "message continuer" or "message starter"
-				break
-			end
-		else
-			break
-		end
-	end
-	
-	word.value = table.concat(chars)
-	if word.value == ":=" then
-		word.type = "definition"
-		word.value = nil
-	elseif self.operationStarters[word.value:sub(1, 1)] then
-		word.type = "operation"
-	end
-	
-	return word
-end
-function Lexer:lexSymbol()
-	local char = self.reader:peek()
-	
-	if char == "." and self.reader:peek(2) == "." and self.reader:peek(3) == "." then
-		self.reader:read(3)
-		return self:createTerm("decoration")
-	end
-	
-	return self:createTerm(self.reader:read())
-end
+return Lexer

@@ -1,4 +1,4 @@
-# Colang 0.2.3
+# Colang 0.3
 
 Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-inspired syntax.
 
@@ -6,19 +6,19 @@ Colang is a minimalistic, purely object-oriented toy programming language with S
 
 * An object is a set of methods.
 * You can send a message to an object, which runs the matching method.
-* Objects can take on the methods of other objects.
-* You can define variables to hold intermediary values.
-* A method body is a list of expressions that returns the last expression's value.
+* Objects can decorate other objects to copy their methods.
+* You can name intermediary values using the `:=` operator.
 
 ## Utilities
 
 There are several builtin objects.
 
-* Number, string, boolean and nil implement a variety of operators.
-* Booleans and nil implement `match:`, sending to it `true`, `false` or `nil`.
+* Numbers, strings and booleans implement a variety of operators.
+* Booleans implement `match:`, sending `true` or `false`.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
 * The `Cell` factory can `make:` new mutable cells that can `get` their value or `put:` a new one.
-* The `system` can `fetch:` Colang objects from the filesystem or `run:` them multiple times.
+* The `Array` object can `make` arrays, that can `get:` or `at:Put:`.
+* The `system` can `require:` Colang code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:` and `move:`.
 
 ## Syntax
 

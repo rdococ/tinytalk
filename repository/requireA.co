@@ -1,6 +1,6 @@
-"Example testing the object fetching system"
+"Example testing `system require:`"
 
-console print: 'libraryA.co loaded.'.
+console print: 'requireA.co ran'.
 
 List :=
 	[cons: h With: t

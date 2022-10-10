@@ -1,8 +1,8 @@
-"Example testing the object fetching system"
+"Example testing `system require:`"
 
 "Should only load file once"
-_ := system fetch: './examples/libraryA.co'.
-List := system fetch: './examples/libraryA.co'.
+system require: './repository/requireA.co'.
+system require: './repository/requireA.co'.
 
 l := List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty)).
 

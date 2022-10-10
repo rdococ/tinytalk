@@ -1,21 +1,52 @@
+--[[
+An implementation for a purely object-oriented toy programming language.
+Copyright (C) 2022 rdococ
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+]]
+
 math.randomseed(os.time())
 
-dofile("./reader.lua")
-dofile("./lexer.lua")
-dofile("./parser.lua")
-dofile("./interpreter.lua")
+StringReader = dofile("./StringReader.lua")
+Lexer = dofile("./Lexer.lua")
+Parser = dofile("./Parser.lua")
+Compiler = dofile("./Compiler.lua")
 
-local interpreter = Interpreter:new()
-local env = Interpreter:createEnv()
+local env = Compiler:createEnv()
 
 while true do
-	local code = io.read("*l")
-	local status, err = pcall(function ()
-		return interpreter:run(Parser:new():parse(Lexer:new():lex(code)), env)
-	end)
-	
-	local printStatus, err = pcall(function ()
-		return interpreter:runMethod(err, "makeString")
-	end)
-	print(err)
+    local code = io.read()
+    local success, result = pcall(function ()
+        local result = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
+        
+        local fn, err = load(result, nil, "t", env)
+        if not fn then
+            error(err)
+        end
+        
+        return fn()
+    end)
+    if success then
+        local success, result = pcall(function ()
+            return env.lookup(result, "makeString")()
+        end)
+        if success then
+            print(result)
+        else
+            print("[object]")
+        end
+    else
+        print(result)
+    end
 end

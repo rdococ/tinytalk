@@ -13,6 +13,6 @@ map :=
 		ls match: [cons: h With: t    List cons: (fn do: h) With: (map over: t With: fn)
 				  |empty              ls]].
 
-l := map over: (List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty))) With: [do: x x * 2].
-
-console print: l tail tail head. "6"
+listTester := [test
+  l := map over: (List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty))) With: [do: x x * 2].
+  console print: l tail tail head. "6"].

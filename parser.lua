@@ -1,313 +1,202 @@
-local function set(str, empty)
-	local set = {}
-	for i = 1, #str do
-		set[str:sub(i, i)] = true
-	end
-	if empty then set[""] = true end
-	return set
-end
+--[[
+An implementation for a purely object-oriented toy programming language.
+Copyright (C) 2022 rdococ
 
-Parser = {}
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+]]
+
+--[[
+TOKEN ATTRIBUTES
+    type
+        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
+    line
+    value
+
+TERM ATTRIBUTES
+    type
+        "variable", "message", "literal", "method", "define", "decorate", "object", "sequence"
+    line
+    value/expression/name/receiver/[1], [2], etc.
+]]
+
+local Parser = {}
 Parser.__index = Parser
 
-Parser.symbols = set("[]()|\\.")
-Parser.bodyClosers = set(")]|\\")
-
-function Parser:new()
-	return setmetatable({}, self)
-end
-
-function Parser:parse(tokens)
-	self.tokens = tokens
-	self.index = 1
-	self.line = self:peek() and self:peek().line
-	
-	return self:parseProgram()
+function Parser:term(term)
+    term.line = self.lexer:line()
+    return term
 end
 function Parser:error(err, ...)
-	if self:peek() then
-		return error(("Line %s: %s"):format(self:peek().line, err:format(...)))
-	end
-	return error(err:format(...))
+    return error(("Line %s: %s"):format(self.lexer:line(), err:format(...)))
 end
 
-function Parser:createTerm(type, attr)
-	local attributes = attr or {}
-	attributes.type, attributes.line = type, self.line
-	return attributes
+function Parser:parse(lexer)
+    local self = setmetatable({index = 0, lexer = lexer}, self)
+    local term = self:parseRecursively(0)
+    
+    local token = self.lexer:peek()
+    if token.type ~= "eof" then self:error("Expected next statement or eof, got %s", token.type) end
+    
+    return term
 end
-function Parser:peek()
-	return self.tokens[self.index]
-end
-function Parser:read()
-	local token = self:peek()
-	self.index = self.index + 1
-	self.line = token.line
-	return token
+function Parser:parseRecursively(prec)
+    local token = self.lexer:read()
+    
+    local case = self.cases[token.type]
+    if not case.handleHead then self:error("Expected value, got %s", token.type) end
+    local left = case.handleHead(self, token)
+    
+    while (self.cases[self.lexer:peek().type].precedence or 0) > prec do
+        token = self.lexer:read()
+        
+        local case = self.cases[token.type]
+        if not case.handleTail then self:error("Expected operation or end of expression, got %s", token.type) end
+        left = self.cases[token.type].handleTail(self, token, left)
+    end
+    
+    return left
 end
 
-function Parser:parseProgram()
-	local body = self:parseBody()
-	local token = self:peek()
-	
-	if token then
-		self:error("Expected end of program, got %q", token.type)
-	end
-	return body
+Parser.cases = {}
+
+Parser.cases.word = {precedence = 6}
+function Parser.cases.word:handleHead(token)
+    return self:term {type = "variable", name = token.value}
 end
-function Parser:parseValue()
-	local token = self:peek()
-	if not token then
-		self:error("Expected value, got nothing")
-	end
-	local content = token.value
-	
-	if token.type == "[" then
-		return self:parseObject()
-	elseif token.type == "(" then
-		self:read()
-		local expr = self:parseExpression()
-		
-		local token = self:read()
-		if token.type ~= ")" then
-			self:error("Expected closed parenthesis, got %q", token.type)
-		end
-		
-		return expr
-	elseif token.type == "word" then
-		return self:parseVariable()
-	elseif token.type == "literal" then
-		return self:read()
-	end
-	
-	self:error("Expected value, got %q", token.type)
+function Parser.cases.word:handleTail(token, left)
+    return self:term {type = "message", receiver = left, name = token.value}
 end
-function Parser:parseVariable()
-	local token = self:read()
-	if token.type ~= "word" then
-		self:error("Expected variable, got %q", token.type)
-	end
-	return self:createTerm("variable", {name = token.value})
+
+Parser.cases.literal = {precedence = 0}
+function Parser.cases.literal:handleHead(token)
+    return self:term {type = "literal", value = token.value}
 end
-function Parser:parseObject()
-	self:read()
-	
-	local object = self:createTerm("object")
-	
-	local token = self:peek()
-	if not token then
-		return self:error("Expected object element, got nothing")
-	elseif token.type == "]" then
-		self:read()
-		return object
-	else
-		table.insert(object, self:parseObjectElement())
-	end
-	
-	while true do
-		token = self:read()
-		
-		if not token then
-			return self:error("Expected object element, got nothing")
-		elseif token.type == "|" then
-			table.insert(object, self:parseObjectElement())
-		elseif token.type == "]" then
-			break
-		else
-			self:error("Expected object element, got %q", token.type)
-		end
-	end
-	
-	return object
+
+Parser.cases.binop = {precedence = 5}
+function Parser.cases.binop:handleTail(token, left)
+    return self:term {type = "message", msgtype = "binop", receiver = left, name = token.value, self:parseRecursively(5)}
 end
-function Parser:parseObjectElement()
-	local token = self:peek()
-	if token.type == "decoration" then
-		return self:parseDecoration()
-	end
-	
-	return self:parseMethod()
+
+Parser.cases.msgopen = {precedence = 4}
+function Parser.cases.msgopen:handleTail(token, left)
+    return self:term {type = "message", msgtype = "keyword", receiver = left, name = token.value, self:parseRecursively(4)}
 end
-function Parser:parseMethod()
-	local method = self:parseMethodSignature()
-	method.body = self:parseBody()
-	
-	return method
+
+Parser.cases.msgnext = {precedence = 4}
+function Parser.cases.msgnext:handleTail(token, left)
+    if left.msgtype ~= "keyword" then
+        self:error("Cannot start a keyword message with an uppercase letter")
+    end
+    left.name = left.name .. token.value
+    table.insert(left, self:parseRecursively(4))
+    return left
 end
-function Parser:parseMethodSignature()
-	local method = self:createTerm("method", {parameters = self:createTerm("parameters")})
-	local token = self:read()
-	if not token then
-		self:error("Expected method signature, got nothing")
-	elseif token.type ~= "word" and token.type ~= "message starter" and token.type ~= "operation" then
-		self:error("Expected method signature, got %q", token.type)
-	end
-	local name = token.value
-	method.message = name
-	
-	-- Multiary message
-	if token.type == "message starter" then
-		while true do
-			table.insert(method.parameters, self:parseVariable().name)
-			
-			local token = self:peek()
-			if not token then
-				self:error("Expected method signature, got nothing")
-			end
-			local content = token.value
-			if token.type ~= "message continuer" then
-				break
-			end
-			
-			self:read()
-			method.message = method.message .. content
-		end
-	-- Binary operation
-	elseif token.type == "operation" then
-		method.parameters[1] = self:parseVariable().name
-	end
-	
-	return method
+
+Parser.cases.define = {precedence = 3}
+function Parser.cases.define:handleTail(token, left)
+    if left.type ~= "variable" then
+        self:error("Expected variable, got %s", left.type)
+    end
+    
+    return self:term {type = "define", variable = left.name, value = self:parseRecursively(2)}
 end
-function Parser:parseDecoration()
-	self:read()
-	return self:createTerm("decoration", {target = self:parseExpression()})
+
+Parser.cases.statclose = {precedence = 2}
+function Parser.cases.statclose:handleTail(token, left)
+    local next = self.lexer:peek()
+    if not self.cases[self.lexer:peek().type].handleHead then
+        return left
+    end
+    
+    if left.type == "sequence" then
+        table.insert(left, self:parseRecursively(2))
+        return left
+    end
+    
+    return self:term {type = "sequence", left, self:parseRecursively(2)}
 end
-function Parser:parseBody()
-	local body = self:createTerm("body")
-	
-	local token = self:peek()
-	if not token or self.bodyClosers[token.type] then
-		return body
-	end
-	while true do
-		table.insert(body, self:parseExpression())
-		token = self:peek()
-		
-		if token and token.type == "." then
-			self:read()
-			
-			local nextToken = self:peek()
-			if not nextToken or self.bodyClosers[nextToken.type] then
-				break
-			end
-		else
-			break
-		end
-	end
-	
-	return body
+
+Parser.cases.expropen = {precedence = 0}
+function Parser.cases.expropen:handleHead(token)
+    local term = self:parseRecursively(0)
+    local close = self.lexer:read()
+    
+    if close.type ~= "exprclose" then
+        self:error("Expected closing parenthesis, got %s", close.type)
+    end
+    
+    return term
 end
-function Parser:parseExpression()
-	return self:parseExprDefinition(self:parseValue())
+
+Parser.cases.objopen = {precedence = 0}
+function Parser.cases.objopen:handleHead(token)
+    local object = self:term {type = "object"}
+    
+    if self.lexer:peek().type == "objclose" then
+        self.lexer:read()
+        return object
+    end
+    
+    while true do
+        local token = self.lexer:peek()
+        if token.type == "msgopen" or token.type == "word" or token.type == "binop" then
+            self.lexer:read()
+            local method = self:term {type = "method", name = token.value}
+            
+            if token.type ~= "word" then
+                while true do
+                    local parameter = self.lexer:read()
+                    if parameter.type ~= "word" then
+                        self:error("Expected parameter, got %s", parameter.type)
+                    end
+                    table.insert(method, parameter.value)
+                    
+                    local token = self.lexer:peek()
+                    if token.type ~= "msgnext" then break else
+                        self.lexer:read()
+                        method.name = method.name .. token.value
+                    end
+                end
+            end
+            
+            if self.cases[self.lexer:peek().type].handleHead then
+                method.expression = self:parseRecursively(0)
+            end
+            table.insert(object, method)
+        elseif token.type == "objdeco" then
+            self.lexer:read()
+            table.insert(object, self:term {type = "decorate", value = self:parseRecursively(0)})
+        end
+        
+        token = self.lexer:peek()
+        if token.type == "objclose" then
+            self.lexer:read()
+            break
+        elseif token.type == "objnext" then
+            self.lexer:read()
+        else
+            self:error("Expected next method or end of object, got %s", token.type)
+        end
+    end
+    
+    return object
 end
-function Parser:getPrecedence(token)
-	if not token then
-		return -4
-	elseif self.bodyClosers[token.type] then
-		return -3
-	elseif token.type == "." then
-		return -2
-	elseif token.type == "message continuer" then
-		return -1
-	elseif token.type == "definition" then
-		return 0
-	elseif token.type == "message starter" then
-		return 1
-	elseif token.type == "operation" then
-		return 2
-	elseif token.type == "word" then
-		return 3
-	else
-		return self:error("Expected operation")
-	end
-end
-function Parser:parseExprDefinition(value)
-	-- Figure out the message segment. If there is no segment, just return.
-	local message = self:peek()
-	local prec = self:getPrecedence(message)
-	
-	-- Send it off to other functions if it's higher precedence
-	if prec > 0 then
-		return self:parseExprDefinition(self:parseExprKeywordMsg(value))
-	elseif prec < 0 then
-		return value
-	end
-	self:read()
-	
-	-- Only variables can be on the left-hand side of a definition!
-	if value.type ~= "variable" then
-		self:error("Expected variable name")
-	end
-	
-	-- Get the right-hand side and create the definition
-	-- Use 'parseExprDefinition' here because definition is best right-associative
-	value = self:createTerm("definition", {name = value.name, value = self:parseExprDefinition(self:parseValue())})
-	
-	-- Loop all over again
-	return self:parseExprDefinition(value)
-end
-function Parser:parseExprKeywordMsg(value)
-	-- Figure out the message segment. If there is no segment, just return.
-	local message = self:peek()
-	local prec = self:getPrecedence(message)
-	
-	-- If this is an operation or unary message, send it off to other functions
-	if prec > 1 then
-		return self:parseExprKeywordMsg(self:parseExprBinaryMsg(value))
-	elseif prec < 1 then
-		return value
-	end
-	self:read()
-	
-	-- Get the right-hand side
-	local nextValue = self:parseExprBinaryMsg(self:parseValue())
-	value = self:createTerm("send", {receiver = value, message = message.value, nextValue})
-	
-	local nextToken = self:peek()
-	while nextToken and nextToken.type == "message continuer" do
-		self:read()
-		value.message = value.message .. nextToken.value
-		table.insert(value, self:parseExprBinaryMsg(self:parseValue()))
-		
-		nextToken = self:peek()
-	end
-	
-	-- Loop all over again
-	return self:parseExprKeywordMsg(value)
-end
-function Parser:parseExprBinaryMsg(value)
-	-- Figure out the message segment. If there is no segment, just return.
-	local message = self:peek()
-	local prec = self:getPrecedence(message)
-	
-	-- If this is a unary message, send it off to other functions
-	-- If this is a multiary message, our caller will handle that
-	if prec > 2 then
-		return self:parseExprBinaryMsg(self:parseExprUnaryMsg(value))
-	elseif prec < 2 then
-		return value
-	end
-	self:read()
-	
-	value = self:createTerm("send", {receiver = value, message = message.value, self:parseExprUnaryMsg(self:parseValue())})
-	
-	-- Loop all over again
-	return self:parseExprBinaryMsg(value)
-end
-function Parser:parseExprUnaryMsg(value)
-	-- Figure out the message segment. If there is no segment, just return.
-	local message = self:peek()
-	local prec = self:getPrecedence(message)
-	
-	-- If this is not a unary message, our caller will handle that
-	if prec < 3 then
-		return value
-	end
-	self:read()
-	
-	value = self:createTerm("send", {receiver = value, message = message.value})
-	
-	-- Loop all over again
-	return self:parseExprUnaryMsg(value)
-end
+
+Parser.cases.exprclose = {precedence = 0}
+Parser.cases.objnext = {precedence = 0}
+Parser.cases.objclose = {precedence = 0}
+Parser.cases.objdeco = {precedence = 0}
+Parser.cases.eof = {precedence = 0}
+
+return Parser
