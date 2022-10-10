@@ -1,45 +1,33 @@
-"Constructing graphics combinator objects with 'contains:' and 'bounds' methods
-Fun task: Rewrite to be much shorter using ./repository/Vector.co"
+"Constructing graphics combinator objects and drawing them to the console
+shapesTester test"
+
+system require: './repository/Vector.co'.
 
 Square :=
-  [at: position WithSize: size
+  [at: origin WithSize: size
+    corner := origin + (Vector makeX: size Y: size).
     [contains: point
-           point x >= position x
-      and: point x <= (position x + size)
-      and: point y >= position y
-      and: point y <= (position y + size)
-    |bounds
-      [origin  position
-      |corner  [x  position x + size
-               |y  position y + size]]]].
+      point >= origin and: point < corner
+    |origin  origin
+    |corner  corner]].
 
 Circle :=
-  [at: position WithRadius: radius
-    [contains: point
-      xDist := point x - position x.
-      yDist := point y - position y.
-      (xDist * xDist + (yDist * yDist)) <= (radius * radius)
-    |bounds
-      [origin  [x  position x - radius |y  position y - radius]
-      |corner  [x  position x + radius |y  position y + radius]]]].
+  [at: centre WithRadius: radius
+    [contains: point  (point - centre) size < radius
+    |origin  Vector makeX: centre x - radius Y: centre y - radius
+    |corner  Vector makeX: centre x + radius Y: centre y + radius]].
 
 Union :=
   [of: shapeA And: shapeB
     [contains: point  shapeA contains: point or: (shapeB contains: point)
-    |bounds
-      [origin  [x  shapeA bounds origin x smaller: shapeB bounds origin x
-               |y  shapeA bounds origin y smaller: shapeB bounds origin y]
-      |corner  [x  shapeA bounds corner x larger:  shapeB bounds corner x
-               |y  shapeA bounds corner y larger:  shapeB bounds corner y]]]].
+    |origin  shapeA origin origin: shapeB origin
+    |corner  shapeA corner corner: shapeB corner]].
 
 Intersection :=
   [of: shapeA And: shapeB
     [contains: point  shapeA contains: point and: (shapeB contains: point)
-    |bounds
-      [origin  [x  shapeA bounds origin x larger:  shapeB bounds origin x
-               |y  shapeA bounds origin y larger:  shapeB bounds origin y]
-      |corner  [x  shapeA bounds corner x smaller: shapeB bounds corner x
-               |y  shapeA bounds corner y smaller: shapeB bounds corner y]]]].
+    |origin  shapeA origin corner: shapeB origin
+    |corner  shapeA corner origin: shapeB corner]].
 
 For :=
   [from: a To: b Do: body
@@ -51,10 +39,9 @@ For :=
 
 Drawer :=
   [draw: shape
-    bounds := shape bounds.
-    For from: bounds origin y To: bounds corner y Do: [with: y
-      For from: bounds origin x To: bounds corner x Do: [with: x
-        shape contains: [x x |y y] match:
+    For from: shape origin y To: shape corner y Do: [with: y
+      For from: shape origin x To: shape corner x Do: [with: x
+        shape contains: (Vector makeX: x Y: y) match:
           [true   console write: '#'
           |false  console write: ' ']].
       console print: '']].
@@ -63,6 +50,6 @@ shapesTester :=
   [test
     Drawer draw:
       (Union of:
-        (Circle at: [x 0 |y 0] WithRadius: 5)
+        (Circle at: (Vector makeX: 0 Y: 0) WithRadius: 5)
       And:
-        (Square at: [x -10 |y -10] WithSize: 10))].
+        (Square at: (Vector makeX: -10 Y: -10) WithSize: 10))].
