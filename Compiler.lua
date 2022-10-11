@@ -28,12 +28,33 @@ local Compiler = {}
 Compiler.__index = Compiler
 
 function Compiler:createEnv()
-    local primitives, lookup, env = {}
+    local primitives, env = {}
+    
+    local function id(...) return ... end
+    local function lookupOrNil(receiver, message)
+        if type(receiver) ~= "function" then
+            local method = primitives[type(receiver)][message]
+            if not method then return nil end
+            return function (...)
+                return method(receiver, ...)
+            end
+        end
+        return receiver(message)
+    end
+    local function lookup(receiver, message)
+        local method = lookupOrNil(receiver, message)
+        if not method then
+            error(("Message not understood: %s"):format(message))
+        end
+        return method
+    end
     
     primitives["nil"] = {}
+    primitives["nil"].makePrimitive = id
     primitives["nil"].makeString = tostring
 
     primitives.boolean = {}
+    primitives.boolean.makePrimitive = id
     primitives.boolean.makeString = tostring
     primitives.boolean["match:"] = function (self, cases)
         return lookup(cases, tostring(self))()
@@ -49,40 +70,41 @@ function Compiler:createEnv()
     end
 
     primitives.number = {}
-    function primitives.number:makeNumber() return self end
+    primitives.number.makePrimitive = id
+    primitives.number.makeNumber = id
     primitives.number.makeString = tostring
     primitives.number["+"] = function (a, b)
-        return a + lookup(b, "makeNumber")()
+        return a + lookup(b, "makePrimitive")()
     end
     primitives.number["-"] = function (a, b)
-        return a - lookup(b, "makeNumber")()
+        return a - lookup(b, "makePrimitive")()
     end
     primitives.number["*"] = function (a, b)
-        return a * lookup(b, "makeNumber")()
+        return a * lookup(b, "makePrimitive")()
     end
     primitives.number["/"] = function (a, b)
-        return a / lookup(b, "makeNumber")()
+        return a / lookup(b, "makePrimitive")()
     end
     primitives.number["%"] = function (a, b)
-        return a % lookup(b, "makeNumber")()
+        return a % lookup(b, "makePrimitive")()
     end
     primitives.number["^"] = function (a, b)
-        return a ^ lookup(b, "makeNumber")()
+        return a ^ lookup(b, "makePrimitive")()
     end
     primitives.number["<"] = function (a, b)
-        return a < lookup(b, "makeNumber")()
+        return a < lookup(b, "makePrimitive")()
     end
     primitives.number["="] = function (a, b)
-        return a == lookup(b, "makeNumber")()
+        return a == lookup(b, "makePrimitive")()
     end
     primitives.number[">"] = function (a, b)
-        return a > lookup(b, "makeNumber")()
+        return a > lookup(b, "makePrimitive")()
     end
     primitives.number["<="] = function (a, b)
-        return a <= lookup(b, "makeNumber")()
+        return a <= lookup(b, "makePrimitive")()
     end
     primitives.number[">="] = function (a, b)
-        return a >= lookup(b, "makeNumber")()
+        return a >= lookup(b, "makePrimitive")()
     end
     primitives.number["larger:"] = math.max
     primitives.number["smaller:"] = math.min
@@ -95,37 +117,20 @@ function Compiler:createEnv()
     primitives.number.tan = math.tan
 
     primitives.string = {}
+    primitives.string.makePrimitive = id
     primitives.string.makeNumber = tonumber
     primitives.string.makeString = tostring
     primitives.string["="] = function (a, b)
-        return a == lookup(b, "makeString")()
+        return a == lookup(b, "makePrimitive")()
     end
     primitives.string[","] = function (a, b)
-        return a .. lookup(b, "makeString")()
+        return a .. lookup(b, "makePrimitive")()
     end
     primitives.string["get:"] = function (self, i)
-        return self:sub(lookup(i, "makeNumber")(), lookup(i, "makeNumber")())
+        return self:sub(lookup(i, "makePrimitive")(), lookup(i, "makePrimitive")())
     end
     primitives.string["slice:"] = function (self, i, j)
-        return self:sub(lookup(i, "makeNumber")(), lookup(j, "makeNumber")())
-    end
-
-    local function lookupOrNil(receiver, message)
-        if type(receiver) ~= "function" then
-            local method = primitives[type(receiver)][message]
-            if not method then return nil end
-            return function (...)
-                return method(receiver, ...)
-            end
-        end
-        return receiver(message)
-    end
-    function lookup(receiver, message)
-        local method = lookupOrNil(receiver, message)
-        if not method then
-            error(("Message not understood: %s"):format(message))
-        end
-        return method
+        return self:sub(lookup(i, "makePrimitive")(), lookup(j, "makePrimitive")())
     end
 
     local function console(msg)
@@ -255,7 +260,7 @@ function Compiler:createEnv()
     env = {
         lookupOrNil = lookupOrNil,
         lookup = lookup,
-        id = function (...) return ... end,
+        id = id,
         
         vartrue = true,
         varfalse = false,
