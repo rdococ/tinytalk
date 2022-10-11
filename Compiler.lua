@@ -387,7 +387,7 @@ function Compiler.cases:object(term)
     if #decoVars == 0 then
         return ("(function (msg) if false then %s end end)"):format(elements)
     end
-    return ("(function (msg) local %s = %s; if false then %s end end)"):format(decoVars, decoValues, elements)
+    return ("(function () local %s = %s; return function (msg) if false then %s end end end)()"):format(decoVars, decoValues, elements)
 end
 function Compiler.cases:method(term)
     local parameters = {}
