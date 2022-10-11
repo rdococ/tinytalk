@@ -361,7 +361,9 @@ function Compiler.cases:define(term)
 end
 function Compiler.cases:object(term)
     local decoVars, decoValues = {}, {}
-    function self:addDeco(value)
+    
+    local oldAddDeco = self.addDecoration
+    function self:addDecoration(value)
         table.insert(decoValues, value)
         table.insert(decoVars, "deco" .. #decoValues)
         return decoVars[#decoVars]
@@ -371,7 +373,8 @@ function Compiler.cases:object(term)
     for _, element in ipairs(term) do
         table.insert(elements, self:compileTerm(element))
     end
-    self.addDeco = nil
+    
+    self.addDecoration = oldAddDeco
     
     elements = table.concat(elements, " ")
     decoVars, decoValues = table.concat(decoVars, ", "), table.concat(decoValues, ", ")
@@ -399,7 +402,7 @@ function Compiler.cases:method(term)
 end
 function Compiler.cases:decorate(term, addDeco)
     local value = self:compileTerm(term.value)
-    local var = self:addDeco(value)
+    local var = self:addDecoration(value)
     
     return ("elseif lookupOrNil(%s, msg) then return lookup(%s, msg)"):format(var, var)
 end
