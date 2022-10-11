@@ -26,6 +26,7 @@ Compiler = dofile("./Compiler.lua")
 local env = Compiler:createEnv()
 
 while true do
+    io.write("> ")
     local code = io.read()
     local success, result = pcall(function ()
         local result = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
