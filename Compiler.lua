@@ -270,7 +270,7 @@ function Compiler:createEnv()
 end
 
 function Compiler:pushScope()
-    self.scope = {varset = {}, variables = {}, defaults = {}, gensyms = 0, parent = self.scope}
+    self.scope = {varset = {}, variables = {}, defaults = {}, parent = self.scope}
     return self.scope
 end
 function Compiler:popScope()
@@ -312,12 +312,6 @@ function Compiler:addVariable(var, default)
     table.insert(self.scope.variables, var)
     table.insert(self.scope.defaults, default or "nil")
     self.scope.varset[var] = true
-end
-function Compiler:addGensymVar(default)
-    local gensym = ("gensym%s"):format(self.scope.gensyms + 1)
-    self:addVariable(gensym, default)
-    self.scope.gensyms = self.scope.gensyms + 1
-    return gensym
 end
 
 function Compiler:compile(term)
@@ -366,21 +360,32 @@ function Compiler.cases:define(term)
     return ("(function () %s = %s; return %s end)()"):format(var, self:compileTerm(term.value), var)
 end
 function Compiler.cases:object(term)
-    return self:withScope(function ()
-        local elements = {}
-        for _, element in ipairs(term) do
-            table.insert(elements, self:compileTerm(element))
-        end
-        elements = table.concat(elements, " ")
+    local decoVars, decoValues = {}, {}
+    function self:addDeco(value)
+        table.insert(decoValues, value)
+        table.insert(decoVars, "deco" .. #decoValues)
+        return decoVars[#decoVars]
+    end
+    
+    local elements = {}
+    for _, element in ipairs(term) do
+        table.insert(elements, self:compileTerm(element))
+    end
+    self.addDeco = nil
+    
+    elements = table.concat(elements, " ")
+    decoVars, decoValues = table.concat(decoVars, ", "), table.concat(decoValues, ", ")
+    
+    if #decoVars == 0 then
         return ("(function (msg) if false then %s end end)"):format(elements)
-    end)
+    end
+    return ("(function (msg) local %s = %s; if false then %s end end)"):format(decoVars, decoValues, elements)
 end
 function Compiler.cases:method(term)
     local parameters = {}
     for _, parameter in ipairs(term) do
         table.insert(parameters, ("var%s"):format(parameter))
     end
-    local parameterStr = table.concat(parameters, ", ")
     
     local expression = self:withScope(function ()
         for _, parameter in ipairs(parameters) do
@@ -389,11 +394,12 @@ function Compiler.cases:method(term)
         return term.expression and self:compileTerm(term.expression) or "nil"
     end)
     
-    return ("elseif msg == %q then return function (%s) return %s end"):format(term.name, parameterStr, expression)
+    parameters = table.concat(parameters, ", ")
+    return ("elseif msg == %q then return function (%s) return %s end"):format(term.name, parameters, expression)
 end
-function Compiler.cases:decorate(term)
+function Compiler.cases:decorate(term, addDeco)
     local value = self:compileTerm(term.value)
-    local var = self:addGensymVar(value)
+    local var = self:addDeco(value)
     
     return ("elseif lookupOrNil(%s, msg) then return lookup(%s, msg)"):format(var, var)
 end
