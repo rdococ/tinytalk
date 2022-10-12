@@ -158,6 +158,8 @@ function Compiler:createEnv()
                         return function () return value end
                     elseif msg == "put:" then
                         return function (new) value = new; return value end
+                    elseif msg == "makeString" then
+                        return function () return "Cell(" .. lookup(value, "makeString")() .. ")" end
                     end
                 end
             end
@@ -176,6 +178,14 @@ function Compiler:createEnv()
                         return function (n, value) items[lookup(n, "makeNumber")()] = value end
                     elseif msg == "size" then
                         return function () return #items end
+                    elseif msg == "makeString" then
+                        return function ()
+                            local itemStrs = {}
+                            for _, item in ipairs(items) do
+                                table.insert(itemStrs, lookup(item, "makeString")())
+                            end
+                            return "Array(" .. table.concat(itemStrs, ", ") .. ")"
+                        end
                     end
                 end
             end

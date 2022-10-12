@@ -42,11 +42,7 @@ while true do
         local success, result = pcall(function ()
             return env.lookup(result, "makeString")()
         end)
-        if success then
-            print(result)
-        else
-            print("[object]")
-        end
+        print(result)
     else
         print(result)
     end
