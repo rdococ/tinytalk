@@ -1,0 +1,55 @@
+"`brainfuck compile:` compiles brainfuck code into a program object. The program can `run:` on a machine, which will instruct the machine what instructions to perform.
+
+`brainfuck machine` makes a new machine. It implements a double-infinite tape with numbers wrapping from 0-255, and when a program is finished it returns the final tape. You can implement your own machine to change these settings, add debug printing etc.
+
+program := brainfuck compile: '+++[>+<-]'.
+program run: brainfuck machine"
+
+brainfuck := 
+    [tokenize: char
+        char = '+' if: [true [if: c c inc] | false
+        char = '-' if: [true [if: c c dec] | false
+        char = '<' if: [true [if: c c left] | false
+        char = '>' if: [true [if: c c right] | false
+        char = '[' if: [true [if: c c loop] | false
+        char = ']' if: [true [if: c c end] | false
+        char = ''  if: [true [if: c c end] | false
+        [if: c c noop]]]]]]]].
+    |compile: code
+        ip := Cell make: 0.
+        self :=
+            [read
+                ip put: ip value + 1. brainfuck tokenize: (code at: ip value)
+            |continue
+                self read if:
+                    [inc    self compose: [run: m m inc] With: self continue.
+                    |dec    self compose: [run: m m dec] With: self continue.
+                    |left   self compose: [run: m m left] With: self continue.
+                    |right  self compose: [run: m m right] With: self continue.
+                    |loop  
+                            body := self continue.
+                            self compose: [run: m m loop: body] With: self continue.
+                    |end    [run: m]
+                    |noop   self continue]
+            |compose: a With: b
+                [run: m
+                    a run: m.
+                    b run: m]].
+        program := self compose: self continue With: [run: m m end].
+    |machine
+        tape := Array make.
+        tape at: 1 Put: 0.
+        tp := Cell make: 1.
+        len := Cell make: 1.
+        self := [inc    tape at: tp value Put: (tape at: tp value) + 1 % 256.
+                |dec    tape at: tp value Put: (tape at: tp value) - 1 % 256.
+                |left   tp put: tp value - 1.
+                |right  tp put: tp value + 1.
+                        tp value > len value if:
+                            [true  len put: len value + 1. tape at: tp value Put: 0.
+                            |false].
+                |loop: body
+                    (tape at: tp value) > 0 if:
+                        [true  body run: self. self loop: body.
+                        |false]
+                |end    tape]].
