@@ -59,6 +59,6 @@ brainfuck :=
         self := [inc         code put: code value, 'tape[tp] = (tape[tp] + 1) % 256;'
                 |dec         code put: code value, 'tape[tp] = (tape[tp] - 1) % 256;'
                 |left        code put: code value, 'tp = tp - 1;'
-                |right       code put: code value, 'tp = tp + 1; tape[tp] = tape[tp] or 0;'
-                |loop: body  code put: code value, 'while true do ', body run: self, ' end; '
+                |right       code put: code value, 'tp = tp + 1;tape[tp] = tape[tp] or 0;'
+                |loop: body  code put: code value, 'while tape[tp] > 0 do ', body run: self, ' end;'
                 |end         code value]].
