@@ -1,17 +1,17 @@
 "Example defining a list data type using the visitor pattern"
 
 List :=
-	[cons: h With: t
-		[match: cases cases cons: h With: t
-		|head h
-		|tail t]
-	|empty
-		[match: cases cases empty]].
+    [cons: h With: t
+        [if: cases cases cons: h With: t
+        |head h
+        |tail t]
+    |empty
+        [if: cases cases empty]].
 
 map :=
-	[over: ls With: fn
-		ls match: [cons: h With: t    List cons: (fn do: h) With: (map over: t With: fn)
-				  |empty              ls]].
+    [over: ls With: fn
+        ls if: [cons: h With: t    List cons: (fn do: h) With: (map over: t With: fn)
+               |empty              ls]].
 
 listTester := [test
   l := map over: (List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty))) With: [do: x x * 2].

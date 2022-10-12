@@ -1,18 +1,18 @@
 "Example using stream codata"
 
 Nats := [from: n
-          self := [get n
-          |next Nats from: n + 1]].
+          self := [value n
+                  |next  Nats from: n + 1]].
 
 filter := [do: str With: fn
-    v := str get.
-    (fn test: v) match: [true [get v | next filter do: (str next) With: fn]
-                        |false filter do: (str next) With: fn]].
+    v := str value.
+    (fn test: v) if: [true [value v | next filter do: (str next) With: fn]
+                     |false filter do: (str next) With: fn]].
 
 nats := Nats from: 1.
-console print: nats get. "1"
-console print: nats next get. "2"
+console print: nats value. "1"
+console print: nats next value. "2"
 
 odds := filter do: nats With: [test: x x % 2 = 1].
-console print: odds get. "1"
-console print: odds next get. "3"
+console print: odds value. "1"
+console print: odds next value. "3"

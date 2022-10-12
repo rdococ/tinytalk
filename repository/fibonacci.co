@@ -1,8 +1,8 @@
 "Example defining a fibonacci function recursively"
 
 fib := [do: n
-	n < 3 match:
-		[true 1
-		|false (fib do: n - 1) + (fib do: n - 2)]].
+    n < 3 if:
+        [true 1
+        |false (fib do: n - 1) + (fib do: n - 2)]].
 
 console print: (fib do: console read makeNumber).

@@ -7,11 +7,11 @@ self := [exampleWithNumber: x
 homage to the original 'Smalltalk on a postcard' syntax that
 inspired it. Colang 2 has less syntax, making this postcard somewhat
 smaller."
-	true and: false not and: (3 > 2) match: [true | false self halt].
-	y := self size + self position.
-	
-	List with: 'a \'banana\'' And: 1 And: 1.0 do: [v: each
-		Transcript show: (each type).
-		Transcript show: ' '].
+    true and: false not and: (3 > 2) if: [true | false self halt].
+    y := self size + self position.
+    
+    List with: 'a \'banana\'' And: 1 And: 1.0 do: [v: each
+        Transcript show: (each type).
+        Transcript show: ' '].
     x < y
 | ...halter]

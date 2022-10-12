@@ -56,7 +56,7 @@ function Compiler:createEnv()
     primitives.boolean = {}
     primitives.boolean.makePrimitive = id
     primitives.boolean.makeString = tostring
-    primitives.boolean["match:"] = function (self, cases)
+    primitives.boolean["if:"] = function (self, cases)
         return lookup(cases, tostring(self))()
     end
     primitives.boolean["and:"] = function (self, other)
@@ -126,10 +126,10 @@ function Compiler:createEnv()
     primitives.string[","] = function (a, b)
         return a .. lookup(b, "makePrimitive")()
     end
-    primitives.string["get:"] = function (self, i)
+    primitives.string["at:"] = function (self, i)
         return self:sub(lookup(i, "makePrimitive")(), lookup(i, "makePrimitive")())
     end
-    primitives.string["slice:"] = function (self, i, j)
+    primitives.string["from:To:"] = function (self, i, j)
         return self:sub(lookup(i, "makePrimitive")(), lookup(j, "makePrimitive")())
     end
 
@@ -154,7 +154,7 @@ function Compiler:createEnv()
         if msg == "make:" then
             return function (value)
                 return function (msg)
-                    if msg == "get" then
+                    if msg == "value" then
                         return function () return value end
                     elseif msg == "put:" then
                         return function (new) value = new; return value end
@@ -170,7 +170,7 @@ function Compiler:createEnv()
             return function ()
                 local items = {}
                 return function (msg)
-                    if msg == "get:" then
+                    if msg == "at:" then
                         return function (n) return items[lookup(n, "makeNumber")()] end
                     elseif msg == "at:Put:" then
                         return function (n, value) items[lookup(n, "makeNumber")()] = value end

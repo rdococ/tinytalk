@@ -3,9 +3,9 @@
 console print: 'requireA.co ran'.
 
 List :=
-	[cons: h With: t
-		[match: cases cases cons: h With: t
-		|head h
-		|tail t]
-	|empty
-		[match: cases cases empty]].
+    [cons: h With: t
+        [if: cases cases cons: h With: t
+        |head h
+        |tail t]
+    |empty
+        [if: cases cases empty]].

@@ -1,16 +1,16 @@
 "Example defining control structures and using objects as code bodies"
 
 when :=
-	[this: cond Do: body
-		cond match:
-			[true body do
-			|false]].
+    [this: cond Do: body
+        cond if:
+            [true body do
+            |false]].
 while :=
-	[this: cond Do: body
-		when this: cond do Do:
-			[do body do. while this: cond Do: body]].
+    [this: cond Do: body
+        when this: cond do Do:
+            [do body do. while this: cond Do: body]].
 
 i := Cell make: 0.
 while this: [do i < 10] Do: [do
-	i put: i + 1.
-	console print: i].
+    i put: i value + 1.
+    console print: i].

@@ -31,7 +31,7 @@ Intersection :=
 
 For :=
   [from: a To: b Do: body
-    a <= b match:
+    a <= b if:
       [true
         body with: a.
         For from: a + 1 To: b Do: body.
@@ -41,7 +41,7 @@ Drawer :=
   [draw: shape
     For from: shape origin y To: shape corner y Do: [with: y
       For from: shape origin x To: shape corner x Do: [with: x
-        shape contains: (Vector makeX: x Y: y) match:
+        shape contains: (Vector makeX: x Y: y) if:
           [true   console write: '#'
           |false  console write: ' ']].
       console print: '']].

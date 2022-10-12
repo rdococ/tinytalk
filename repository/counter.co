@@ -4,8 +4,8 @@ Counter := [make: n
              number := Cell make: n.
              [increment: n
                number put: number + n
-             |get
-               number get
+             |value
+               number value
              |makeString
                'Counter at ' , number]
            |make Counter make: 0].
