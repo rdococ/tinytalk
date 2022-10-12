@@ -16,8 +16,8 @@ There are several builtin objects.
 * Numbers, strings and booleans implement a variety of operators.
 * Booleans implement `match:`, sending `true` or `false`.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
-* The `Cell` factory can `make:` new mutable cells that can `get` their value or `put:` a new one.
-* The `Array` object can `make` arrays, that can `get:` or `at:Put:`.
+* The `Cell` factory can `make:` new mutable cells that can get their `value` or `put:` a new one.
+* The `Array` object can `make` arrays, that can get values `at:` a position, or `at:Put:`.
 * The `system` can `require:` Colang code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:` and `move:`.
 
 ## Syntax
