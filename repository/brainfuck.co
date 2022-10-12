@@ -1,6 +1,6 @@
-"`brainfuck compile:` compiles brainfuck code into a program object. The program can `run:` on a machine, which will instruct the machine what instructions to perform.
+"`brainfuck compile:` compiles brainfuck code into a program object. The program can `run:` on a machine, which will instruct the machine what to do.
 
-`brainfuck machine` makes a new machine. It implements a double-infinite tape with numbers wrapping from 0-255, and when a program is finished it returns the final tape. You can implement your own machine to change these settings, add debug printing etc.
+`brainfuck machine` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaBackend` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
 
 program := brainfuck compile: '+++[>+<-]'.
 program run: brainfuck machine"
@@ -44,6 +44,7 @@ brainfuck :=
         self := [inc    tape at: tp value Put: (tape at: tp value) + 1 % 256.
                 |dec    tape at: tp value Put: (tape at: tp value) - 1 % 256.
                 |left   tp put: tp value - 1.
+                        tp value < 1 if: [true console error: 'Tape pointer exceeded left edge' | false].
                 |right  tp put: tp value + 1.
                         tp value > len value if:
                             [true  len put: len value + 1. tape at: tp value Put: 0.
@@ -52,4 +53,12 @@ brainfuck :=
                     (tape at: tp value) > 0 if:
                         [true  body run: self. self loop: body.
                         |false]
-                |end    tape]].
+                |end    tape]
+    |luaBackend
+        code := Cell make: 'tape, tp = {0}, 1;'.
+        self := [inc         code put: code value, 'tape[tp] = (tape[tp] + 1) % 256;'
+                |dec         code put: code value, 'tape[tp] = (tape[tp] - 1) % 256;'
+                |left        code put: code value, 'tp = tp - 1;'
+                |right       code put: code value, 'tp = tp + 1; tape[tp] = tape[tp] or 0;'
+                |loop: body  code put: code value, 'while true do ', body run: self, ' end; '
+                |end         code value]].
