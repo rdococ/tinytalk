@@ -1,4 +1,4 @@
-# Colang 0.3
+# Colang 0.3.1
 
 Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-inspired syntax.
 
