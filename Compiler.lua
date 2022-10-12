@@ -381,13 +381,13 @@ function Compiler.cases:object(term)
     
     self.addDecoration = oldAddDeco
     
-    elements = table.concat(elements, " ")
+    elements = table.concat(elements, " or ")
     decoVars, decoValues = table.concat(decoVars, ", "), table.concat(decoValues, ", ")
     
     if #decoVars == 0 then
-        return ("(function (msg) if false then %s end end)"):format(elements)
+        return ("(function (msg) return %s end)"):format(elements)
     end
-    return ("(function () local %s = %s; return function (msg) if false then %s end end end)()"):format(decoVars, decoValues, elements)
+    return ("(function () local %s = %s; return function (msg) return %s end end)()"):format(decoVars, decoValues, elements)
 end
 function Compiler.cases:method(term)
     local parameters = {}
@@ -403,13 +403,13 @@ function Compiler.cases:method(term)
     end)
     
     parameters = table.concat(parameters, ", ")
-    return ("elseif msg == %q then return function (%s) return %s end"):format(term.name, parameters, expression)
+    return ("msg == %q and function (%s) return %s end"):format(term.name, parameters, expression)
 end
 function Compiler.cases:decorate(term, addDeco)
     local value = self:compileTerm(term.value)
     local var = self:addDecoration(value)
     
-    return ("elseif lookupOrNil(%s, msg) then return lookup(%s, msg)"):format(var, var)
+    return ("lookupOrNil(%s, msg)"):format(var)
 end
 
 return Compiler
