@@ -25,6 +25,12 @@ Fraction :=
                 [...b | isFraction false] isFraction if:
                     [true   a * (Fraction of: b denominator And: b numerator)
                     |false  a makePrimitive / b].
+             |larger: b   a > b if: [true a | false b]
+             |smaller: b  a > b if: [true b | false a]
+             |abs
+                Fraction of: numerator abs And: denominator abs
+             |negate
+                Fraction of: numerator negate And: denominator
              |numerator numerator
              |denominator denominator
              |isFraction true
