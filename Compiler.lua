@@ -48,6 +48,12 @@ function Compiler:createEnv()
         end
         return method
     end
+    local function makePrimitiveString(receiver)
+        return lookup(lookup(receiver, "makeString")(), "makePrimitive")()
+    end
+    local function makePrimitiveNumber(receiver)
+        return lookup(lookup(receiver, "makeNumber")(), "makePrimitive")()
+    end
     
     primitives["nil"] = {}
     primitives["nil"].makePrimitive = id
@@ -74,37 +80,37 @@ function Compiler:createEnv()
     primitives.number.makeNumber = id
     primitives.number.makeString = tostring
     primitives.number["+"] = function (a, b)
-        return a + lookup(b, "makePrimitive")()
+        return a + makePrimitiveNumber(b)
     end
     primitives.number["-"] = function (a, b)
-        return a - lookup(b, "makePrimitive")()
+        return a - makePrimitiveNumber(b)
     end
     primitives.number["*"] = function (a, b)
-        return a * lookup(b, "makePrimitive")()
+        return a * makePrimitiveNumber(b)
     end
     primitives.number["/"] = function (a, b)
-        return a / lookup(b, "makePrimitive")()
+        return a / makePrimitiveNumber(b)
     end
     primitives.number["%"] = function (a, b)
-        return a % lookup(b, "makePrimitive")()
+        return a % makePrimitiveNumber(b)
     end
     primitives.number["^"] = function (a, b)
-        return a ^ lookup(b, "makePrimitive")()
+        return a ^ makePrimitiveNumber(b)
     end
     primitives.number["<"] = function (a, b)
-        return a < lookup(b, "makePrimitive")()
+        return a < makePrimitiveNumber(b)
     end
     primitives.number["="] = function (a, b)
-        return a == lookup(b, "makePrimitive")()
+        return a == (lookupOrNil(b, "makePrimitive") or id)()
     end
     primitives.number[">"] = function (a, b)
-        return a > lookup(b, "makePrimitive")()
+        return a > makePrimitiveNumber(b)
     end
     primitives.number["<="] = function (a, b)
-        return a <= lookup(b, "makePrimitive")()
+        return a <= makePrimitiveNumber(b)
     end
     primitives.number[">="] = function (a, b)
-        return a >= lookup(b, "makePrimitive")()
+        return a >= makePrimitiveNumber(b)
     end
     primitives.number["larger:"] = math.max
     primitives.number["smaller:"] = math.min
@@ -121,30 +127,30 @@ function Compiler:createEnv()
     primitives.string.makeNumber = tonumber
     primitives.string.makeString = tostring
     primitives.string["="] = function (a, b)
-        return a == lookup(b, "makePrimitive")()
+        return a == (lookupOrNil(b, "makePrimitive") or id)()
     end
     primitives.string[","] = function (a, b)
-        return a .. lookup(b, "makePrimitive")()
+        return a .. makePrimitiveString(b)
     end
     primitives.string["at:"] = function (self, i)
-        return self:sub(lookup(i, "makePrimitive")(), lookup(i, "makePrimitive")())
+        return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(i))
     end
     primitives.string["from:To:"] = function (self, i, j)
-        return self:sub(lookup(i, "makePrimitive")(), lookup(j, "makePrimitive")())
+        return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(j))
     end
 
     local function console(msg)
         if msg == "print:" then
             return function (text)
-                print(lookup(text, "makeString")())
+                print(makePrimitiveString(text))
             end
         elseif msg == "write:" then
             return function (text)
-                io.write(lookup(text, "makeString")())
+                io.write(makePrimitiveString(text))
             end
         elseif msg == "error:" then
             return function (text)
-                error(lookup(text, "makeString")())
+                error(makePrimitiveString(text))
             end
         elseif msg == "read" then
             return io.read
@@ -159,7 +165,7 @@ function Compiler:createEnv()
                     elseif msg == "put:" then
                         return function (new) value = new; return value end
                     elseif msg == "makeString" then
-                        return function () return "Cell(" .. lookup(value, "makeString")() .. ")" end
+                        return function () return "Cell(" .. makePrimitiveString(text) .. ")" end
                     end
                 end
             end
@@ -173,16 +179,24 @@ function Compiler:createEnv()
                 local items = {}
                 return function (msg)
                     if msg == "at:" then
-                        return function (n) return items[lookup(n, "makeNumber")()] end
+                        return function (n, value)
+                            n = makePrimitiveNumber(n)
+                            if type(n) ~= "number" then return end
+                            return items[n]
+                        end
                     elseif msg == "at:Put:" then
-                        return function (n, value) items[lookup(n, "makeNumber")()] = value end
+                        return function (n, value)
+                            n = makePrimitiveNumber(n)
+                            if type(n) ~= "number" then error("Cannot use non-numerical array keys") end
+                            items[n] = value
+                        end
                     elseif msg == "size" then
                         return function () return #items end
                     elseif msg == "makeString" then
                         return function ()
                             local itemStrs = {}
                             for _, item in ipairs(items) do
-                                table.insert(itemStrs, lookup(item, "makeString")())
+                                table.insert(itemStrs, makePrimitiveString(item))
                             end
                             return "Array(" .. table.concat(itemStrs, ", ") .. ")"
                         end
@@ -196,7 +210,7 @@ function Compiler:createEnv()
     local function system(msg)
         if msg == "require:" then
             return function (filename)
-                filename = lookup(filename, "makeString")()
+                filename = makePrimitiveString(filename)
                 
                 if loaded[filename] then return loaded[filename].result end
                 
@@ -216,7 +230,7 @@ function Compiler:createEnv()
             end
         elseif msg == "run:" then
             return function (filename)
-                filename = lookup(filename, "makeString")()
+                filename = makePrimitiveString(filename)
                 
                 local file = io.open(filename)
                 local code = file:read("*a")
@@ -233,7 +247,7 @@ function Compiler:createEnv()
             end
         elseif msg == "open:" then
             return function (filename)
-                filename = lookup(filename, "makeString")()
+                filename = makePrimitiveString(filename)
                 local file = io.open(filename)
                 
                 return function (msg)
@@ -261,6 +275,10 @@ function Compiler:createEnv()
                         end
                     elseif msg == "close" then
                         return function () file:close() end
+                    elseif msg == "makeString" then
+                        return function ()
+                            return "File(" .. filename .. ")"
+                        end
                     end
                 end
             end
