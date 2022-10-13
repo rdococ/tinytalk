@@ -187,7 +187,7 @@ function Compiler:createEnv()
                     elseif msg == "at:Put:" then
                         return function (n, value)
                             n = makePrimitiveNumber(n)
-                            if type(n) ~= "number" then error("Cannot use non-numerical array keys") end
+                            if type(n) ~= "number" or math.floor(n) ~= n then error("Cannot use non-integer array keys") end
                             items[n] = value
                         end
                     elseif msg == "size" then
