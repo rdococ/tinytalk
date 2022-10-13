@@ -1,0 +1,33 @@
+"`Fraction of:And:` returns a fraction. Doing arithmetic with two fractions returns a fraction as output, while one fraction and a primitive converts the fraction to one. Any operations not implemented by the fraction objects themselves are forwarded to their primitive equivalent."
+
+Fraction :=
+    [of: numerator And: denominator
+        gcd := [of: a And: b
+            b = 0 if: [true a
+                      |false gcd of: b And: a % b]].
+        divisor := gcd of: numerator And: denominator.
+        numerator := numerator / divisor.
+        denominator := denominator / divisor.
+        a := [+ b
+                [...b | isFraction false] isFraction if:
+                    [true
+                        Fraction of: (a numerator * b denominator + (b numerator * a denominator)) And: a denominator * b denominator
+                    |false  a makePrimitive + b].
+             |- b
+                [...b | isFraction false] isFraction if:
+                    [true   a + (Fraction of: (0 - b numerator) And: b denominator)
+                    |false  a makePrimitive - b].
+             |* b
+                [...b | isFraction false] isFraction if:
+                    [true   Fraction of: (a numerator * b numerator) And: (a denominator * b denominator)
+                    |false  a makePrimitive * b].
+             |/ b
+                [...b | isFraction false] isFraction if:
+                    [true   a * (Fraction of: b denominator And: b numerator)
+                    |false  a makePrimitive / b].
+             |numerator numerator
+             |denominator denominator
+             |isFraction true
+             |makeString
+                (numerator / denominator) floor makeString, ' + ', (numerator % denominator), '/', denominator
+             |...numerator / denominator]].
