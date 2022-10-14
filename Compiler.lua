@@ -122,13 +122,6 @@ function Compiler:createEnv()
     primitives.number.cos = math.cos
     primitives.number.tan = math.tan
     primitives.number.negate = function (x) return -x end
-    primitives.number["to:Do:"] = function (a, b, body)
-        local result
-        for i = a, b do
-            result = lookup(body, "of:")(i)
-        end
-        return result
-    end
 
     primitives.string = {}
     primitives.string.makePrimitive = id
