@@ -123,6 +123,7 @@ function Compiler:createEnv()
     primitives.number.cos = math.cos
     primitives.number.tan = math.tan
     primitives.number.negate = function (x) return -x end
+    primitives.number.character = string.char
 
     primitives.string = {}
     primitives.string.makePrimitive = id
@@ -140,7 +141,8 @@ function Compiler:createEnv()
     primitives.string["from:To:"] = function (self, i, j)
         return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(j))
     end
-    primitives.string["import"] = function (self)
+    primitives.string.byte = string.byte
+    primitives.string.import = function (self)
         local filename = ("./repository/%s.co"):format(self)
         if loaded[filename] then return loaded[filename].result end
         
@@ -174,6 +176,8 @@ function Compiler:createEnv()
             end
         elseif msg == "read" then
             return io.read
+        elseif msg == "read:" then
+            return function (x) return io.read(makePrimitiveNumber(x)) end
         end
     end
     local function Cell(msg)
@@ -271,7 +275,9 @@ function Compiler:createEnv()
                 
                 return function (msg)
                     if msg == "read" then
-                        return function () return file:read("*l") end
+                        return function () return file:read() end
+                    elseif msg == "read:" then
+                        return function (x) return file:read(makePrimitiveNumber(x)) end
                     elseif msg == "readAll" then
                         return function () return file:read("*a") end
                     elseif msg == "write:" then
