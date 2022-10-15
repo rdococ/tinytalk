@@ -54,6 +54,7 @@ function Compiler:createEnv()
     local function makePrimitiveNumber(receiver)
         return lookup(lookup(receiver, "makeNumber")(), "makePrimitive")()
     end
+    local loaded = setmetatable({}, {__mode = "v"})
     
     primitives["nil"] = {}
     primitives["nil"].makePrimitive = id
@@ -139,6 +140,24 @@ function Compiler:createEnv()
     primitives.string["from:To:"] = function (self, i, j)
         return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(j))
     end
+    primitives.string["import"] = function (self)
+        local filename = ("./repository/%s.co"):format(self)
+        if loaded[filename] then return loaded[filename].result end
+        
+        local file = io.open(filename)
+        local code = file:read("*a")
+        file:close()
+        
+        local compiled = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
+        local fn, err = load(compiled, nil, "t", env)
+        
+        if not fn then
+            error(err)
+        end
+        
+        loaded[filename] = {result = fn()}
+        return loaded[filename].result
+    end
 
     local function console(msg)
         if msg == "print:" then
@@ -207,7 +226,6 @@ function Compiler:createEnv()
         end
     end
     
-    local loaded = setmetatable({}, {__mode = "v"})
     local function system(msg)
         if msg == "require:" then
             return function (filename)
