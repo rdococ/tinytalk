@@ -1,8 +1,8 @@
-"Example testing `system require:`"
+"Example testing `import`"
 
 "Should only load file once"
-system require: './repository/requireA.co'.
-system require: './repository/requireA.co'.
+'importA' import.
+'importA' import.
 
 l := List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty)).
 

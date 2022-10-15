@@ -1,6 +1,6 @@
-"Example testing `system require:`"
+"Example testing `import`"
 
-console print: 'requireA.co ran'.
+console print: 'importA has been ran!'.
 
 List :=
     [cons: h With: t

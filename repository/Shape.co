@@ -1,7 +1,7 @@
 "Constructing graphics combinator objects and drawing them to the console
 shapeTester test"
 
-system require: './repository/Vector.co'.
+'Vector' import.
 
 Square :=
   [at: origin WithSize: size
