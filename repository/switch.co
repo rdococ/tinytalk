@@ -1,0 +1,22 @@
+"`switch` is a custom control structure for choosing from a set of cases. `case:` tests a case, and `else:` performs the first case that was tested to be true.
+
+switch
+case: [if x = 1 | do 'x is 1!']
+case: [if x = 2 | do 'x is 2!']
+else: [do 'x is not 1 or 2!'].
+
+switch on: x
+case: [if 1 | do 'x is 1!']
+case: [if 2 | do 'x is 2!']
+else: [do 'x is not 1 or 2!']."
+
+switch :=
+    [case: case
+        case if if:
+            [true  self := [case: c self | else: c case do]
+            |false switch]
+    |else: case
+        case do
+    |on: value
+        decorator := [for: s [case: c decorator for: (s case: [if c if = value | ...c]) | ...s]].
+        decorator for: switch].

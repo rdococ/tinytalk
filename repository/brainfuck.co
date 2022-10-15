@@ -5,16 +5,21 @@
 program := brainfuck compile: '+++[>+<-]'.
 program run: brainfuck machine"
 
+'switch' import.
+
 brainfuck := 
     [tokenize: char
-        char = '+' if: [true [if: c c inc] | false
-        char = '-' if: [true [if: c c dec] | false
-        char = '<' if: [true [if: c c left] | false
-        char = '>' if: [true [if: c c right] | false
-        char = '[' if: [true [if: c c loop] | false
-        char = ']' if: [true [if: c c end] | false
-        char = ''  if: [true [if: c c end] | false
-        [if: c c noop]]]]]]]].
+        switch on: char
+        case: [if '+' | do [if: c c    inc]]
+        case: [if '-' | do [if: c c    dec]]
+        case: [if '<' | do [if: c c   left]]
+        case: [if '>' | do [if: c c  right]]
+        case: [if '[' | do [if: c c   loop]]
+        case: [if ']' | do [if: c c    end]]
+        case: [if ',' | do [if: c c  input]]
+        case: [if '.' | do [if: c c output]]
+        case: [if ''  | do [if: c c    end]]
+        else:          [do [if: c c   noop]]
     |compile: code
         ip := Cell make: 0.
         self :=
@@ -22,15 +27,17 @@ brainfuck :=
                 ip put: ip value + 1. brainfuck tokenize: (code at: ip value)
             |continue
                 self read if:
-                    [inc    self compose: [run: m m inc] With: self continue.
-                    |dec    self compose: [run: m m dec] With: self continue.
-                    |left   self compose: [run: m m left] With: self continue.
-                    |right  self compose: [run: m m right] With: self continue.
+                    [inc     self compose: [run: m m inc] With: self continue.
+                    |dec     self compose: [run: m m dec] With: self continue.
+                    |left    self compose: [run: m m left] With: self continue.
+                    |right   self compose: [run: m m right] With: self continue.
                     |loop  
-                            body := self continue.
-                            self compose: [run: m m loop: body] With: self continue.
-                    |end    [run: m]
-                    |noop   self continue]
+                             body := self continue.
+                             self compose: [run: m m loop: body] With: self continue.
+                    |end     [run: m]
+                    |input   self compose: [run: m m input] With: self continue.
+                    |output  self compose: [run: m m output] With: self continue.
+                    |noop    self continue]
             |compose: a With: b
                 [run: m
                     a run: m.
@@ -53,12 +60,19 @@ brainfuck :=
                     (tape at: tp value) > 0 if:
                         [true  body run: self. self loop: body.
                         |false]
+                |input  tp put: (console read: 1) byte.
+                |output console write: (tape at: tp value) character.
                 |end    tape]
     |luaBackend
         code := Cell make: 'tape, tp = {0}, 1;'.
-        self := [inc         code put: code value, 'tape[tp] = (tape[tp] + 1) % 256;'
-                |dec         code put: code value, 'tape[tp] = (tape[tp] - 1) % 256;'
-                |left        code put: code value, 'tp = tp - 1;'
-                |right       code put: code value, 'tp = tp + 1;tape[tp] = tape[tp] or 0;'
-                |loop: body  code put: code value, 'while tape[tp] > 0 do ', body run: self, ' end;'
+        code := [append: piece  code put: code value, piece | ...code].
+        self := [inc         code append: 'tape[tp] = (tape[tp] + 1) % 256;'
+                |dec         code append: 'tape[tp] = (tape[tp] - 1) % 256;'
+                |left        code append: 'tp = tp - 1;'
+                |right       code append: 'tp = tp + 1;tape[tp] = tape[tp] or 0;'
+                |loop: body  code append: 'while tape[tp] > 0 do '.
+                             body run: self.
+                             code append: ' end;'
+                |input       code append: 'tape[tp] = io.read(1):byte();'
+                |output      code append: 'io.write(string.char(tape[tp]));'
                 |end         code value]].
