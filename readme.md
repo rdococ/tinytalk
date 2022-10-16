@@ -1,13 +1,13 @@
-# Colang 0.4
+![# Tinytalk](logo.png)
 
-Colang is a minimalistic, purely object-oriented toy programming language with Smalltalk-inspired syntax.
+Tinytalk is a minimalistic, purely object-oriented toy programming language.
 
 ## Semantics
 
 * An object is a set of methods.
 * You can send a message to an object, which runs the matching method.
 * Objects can decorate other objects to copy their methods.
-* You can name intermediary values using the `:=` operator.
+* You can use variables to name intermediary values.
 
 ## Utilities
 
@@ -25,43 +25,26 @@ There are several builtin objects.
 ```
 "Comment"
 
-"Body of statements"
-zombie attackedWith: player weapon By: player.
+zombie attackedWith: player weapon By: player. "Statements"
 player weapon degrade: 1.
 
-"Variable access"
-abc
+abc := x. "Variable definition"
+console print: abc. "Variable access"
 
-"Variable definition"
-abc := x
+player attackedWith: zombie weapon By: zombie "Keyword message"
 
-"Keyword message"
-player attackedWith: zombie jaw By: zombie
+console print: x + y. "Operator message"
+player poisoned. "Unary message"
 
-"Operator message"
-x + y
+cell put: (fibonacci of: 5). "Parentheses"
 
-"Unary message"
-x negate
+dog := [callTo: person "Object definition"
+           person barkedAt
+       |fetch: ball For: person
+           ball fetched.
+           person takeItem: ball].
 
-"Parentheses"
-(x)
-
-"Object definition"
-[callTo: person
-    person barkedAt
-|fetch: ball For: person
-    ball fetched.
-    person takeItem: ball.]
-
-"Object decoration"
-[makeNoise
-    console print: 'Cockadoodle doo!'
-|...bird]
-
-"String literal"
-'abc'
-
-"Number literal"
-1.23
+"Variable redefinition"
+dog := [name 'Percy' "String literal"
+       |...dog]. "Object decoration"
 ```
