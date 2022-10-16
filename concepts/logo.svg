@@ -2,13 +2,16 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="250"
-   height="68.041878"
-   viewBox="0 0 66.145833 18.002747"
+   width="200"
+   height="54.433502"
+   viewBox="0 0 52.916666 14.402198"
    version="1.1"
    id="svg64303"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    sodipodi:docname="logo.svg"
+   inkscape:export-filename="..\logo.png"
+   inkscape:export-xdpi="72"
+   inkscape:export-ydpi="72"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,9 +27,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="1"
-     inkscape:cx="239"
-     inkscape:cy="24.5"
+     inkscape:zoom="2.8237469"
+     inkscape:cx="59.849556"
+     inkscape:cy="50.464862"
      inkscape:window-width="1920"
      inkscape:window-height="1001"
      inkscape:window-x="-9"
@@ -42,18 +45,18 @@
      transform="translate(-24.545857,-73.94259)">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:16.2776px;line-height:1.1;font-family:'Product Sans';-inkscape-font-specification:'Product Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#3d41ff;fill-opacity:1;stroke:none;stroke-width:0.554918;stroke-linecap:butt;stroke-linejoin:round"
-       x="24.076956"
-       y="86.309631"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.0221px;line-height:1.1;font-family:'Product Sans';-inkscape-font-specification:'Product Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#3d80ff;fill-opacity:1;stroke:none;stroke-width:0.443935;stroke-linecap:butt;stroke-linejoin:round"
+       x="24.170765"
+       y="83.836143"
        id="text44567"><tspan
          sodipodi:role="line"
          id="tspan44565"
-         x="24.076956"
-         y="86.309631"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'DejaVu Serif';-inkscape-font-specification:'DejaVu Serif';fill:#3d41ff;fill-opacity:1;stroke-width:0.554918;stroke-linecap:butt;stroke-linejoin:round">tinytalk</tspan></text>
+         x="24.170765"
+         y="83.836143"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'DejaVu Serif';-inkscape-font-specification:'DejaVu Serif';fill:#3d80ff;fill-opacity:1;stroke-width:0.443935;stroke-linecap:butt;stroke-linejoin:round">tinytalk</tspan></text>
     <path
-       style="fill:#3d6bff;fill-opacity:1;stroke:none;stroke-width:0.286505px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 56.560812,88.452864 32.464024,1.428737 V 78.213578 l 1.666854,13.731759 z"
+       style="fill:#3d6cff;fill-opacity:1;stroke:none;stroke-width:0.229204px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 50.157825,85.550804 c 8.706335,0.08542 17.510754,-0.417663 25.971216,1.142992 v -9.334434 l 1.333483,10.985425 C 69.036988,86.24577 59.512359,86.045188 50.157825,85.550804 Z"
        id="path55668"
        sodipodi:nodetypes="ccccc" />
   </g>
