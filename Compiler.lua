@@ -32,14 +32,14 @@ function Compiler:createEnv()
     
     local function id(...) return ... end
     local function lookupOrNil(receiver, message)
-        if type(receiver) ~= "function" then
+        if type(receiver) ~= "table" then
             local method = primitives[type(receiver)][message]
             if not method then return nil end
             return function (...)
                 return method(receiver, ...)
             end
         end
-        return receiver(message)
+        return receiver[message]
     end
     local function lookup(receiver, message)
         local method = lookupOrNil(receiver, message)
@@ -47,6 +47,17 @@ function Compiler:createEnv()
             error(("Message not understood: %s"):format(message))
         end
         return method
+    end
+    local function decorate(object, decoratee)
+        if type(decoratee) ~= "table" then
+            for message, method in pairs(primitives[type(decoratee)]) do
+                object[message] = object[message] or function (...) return method(decoratee, ...) end
+            end
+            return
+        end
+        for message, method in pairs(decoratee) do
+            object[message] = object[message] or method
+        end
     end
     local function makePrimitiveString(receiver)
         return lookup(lookup(receiver, "makeString")(), "makePrimitive")()
@@ -160,159 +171,101 @@ function Compiler:createEnv()
         loaded[filename] = {result = fn()}
         return loaded[filename].result
     end
-
-    local function console(msg)
-        if msg == "print:" then
-            return function (text)
-                print(makePrimitiveString(text))
-            end
-        elseif msg == "write:" then
-            return function (text)
-                io.write(makePrimitiveString(text))
-            end
-        elseif msg == "error:" then
-            return function (text)
-                error(makePrimitiveString(text))
-            end
-        elseif msg == "read" then
-            return io.read
-        elseif msg == "read:" then
-            return function (x) return io.read(makePrimitiveNumber(x)) end
-        end
+    
+    local console = {}
+    console["print:"] = function (text) print(makePrimitiveString(text)) end
+    console["write:"] = function (text) io.write(makePrimitiveString(text)) end
+    console["error:"] = function (text) error(makePrimitiveString(text)) end
+    console.read = io.read
+    console["read:"] = function (n) return io.read(makePrimitiveNumber(n)) end
+    
+    local Cell = {}
+    Cell["make:"] = function (value)
+        return {
+            value = function () return value end,
+            ["put:"] = function (new) value = new; return value end,
+            makeString = function () return "Cell(" .. makePrimitiveString(text) .. ")" end
+        }
     end
-    local function Cell(msg)
-        if msg == "make:" then
-            return function (value)
-                return function (msg)
-                    if msg == "value" then
-                        return function () return value end
-                    elseif msg == "put:" then
-                        return function (new) value = new; return value end
-                    elseif msg == "makeString" then
-                        return function () return "Cell(" .. makePrimitiveString(text) .. ")" end
-                    end
+    Cell.make = Cell["make:"]
+    
+    local Array = {}
+    Array.make = function ()
+        local items = {}
+        return {
+            ["at:"] = function (n, value)
+                n = makePrimitiveNumber(n)
+                if type(n) ~= "number" then return end
+                return items[n]
+            end,
+            ["at:Put:"] = function (n, value)
+                n = makePrimitiveNumber(n)
+                if type(n) ~= "number" or math.floor(n) ~= n then error("Cannot use non-integer array keys") end
+                items[n] = value
+            end,
+            size = function () return #items end,
+            makeString = function ()
+                local itemStrs = {}
+                for _, item in ipairs(items) do
+                    table.insert(itemStrs, makePrimitiveString(item))
                 end
+                return "Array(" .. table.concat(itemStrs, ", ") .. ")"
             end
-        elseif msg == "make" then
-            return Cell("make:")
-        end
-    end
-    local function Array(msg)
-        if msg == "make" then
-            return function ()
-                local items = {}
-                return function (msg)
-                    if msg == "at:" then
-                        return function (n, value)
-                            n = makePrimitiveNumber(n)
-                            if type(n) ~= "number" then return end
-                            return items[n]
-                        end
-                    elseif msg == "at:Put:" then
-                        return function (n, value)
-                            n = makePrimitiveNumber(n)
-                            if type(n) ~= "number" or math.floor(n) ~= n then error("Cannot use non-integer array keys") end
-                            items[n] = value
-                        end
-                    elseif msg == "size" then
-                        return function () return #items end
-                    elseif msg == "makeString" then
-                        return function ()
-                            local itemStrs = {}
-                            for _, item in ipairs(items) do
-                                table.insert(itemStrs, makePrimitiveString(item))
-                            end
-                            return "Array(" .. table.concat(itemStrs, ", ") .. ")"
-                        end
-                    end
-                end
-            end
-        end
+        }
     end
     
-    local function system(msg)
-        if msg == "require:" then
-            return function (filename)
-                filename = makePrimitiveString(filename)
-                
-                if loaded[filename] then return loaded[filename].result end
-                
-                local file = io.open(filename)
-                local code = file:read("*a")
-                file:close()
-                
-                local compiled = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
-                local fn, err = load(compiled, nil, "t", env)
-                
-                if not fn then
-                    error(err)
-                end
-                
-                loaded[filename] = {result = fn()}
-                return loaded[filename].result
-            end
-        elseif msg == "run:" then
-            return function (filename)
-                filename = makePrimitiveString(filename)
-                
-                local file = io.open(filename)
-                local code = file:read("*a")
-                file:close()
-                
-                local compiled = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
-                local fn, err = load(compiled, nil, "t", env)
-                
-                if not fn then
-                    error(err)
-                end
-                
-                return fn()
-            end
-        elseif msg == "open:" then
-            return function (filename)
-                filename = makePrimitiveString(filename)
-                local file = io.open(filename)
-                
-                return function (msg)
-                    if msg == "read" then
-                        return function () return file:read() end
-                    elseif msg == "read:" then
-                        return function (x) return file:read(makePrimitiveNumber(x)) end
-                    elseif msg == "readAll" then
-                        return function () return file:read("*a") end
-                    elseif msg == "write:" then
-                        return function (text)
-                            file:write(lookup(text, "makeString")())
-                            file:flush()
-                        end
-                    elseif msg == "position" then
-                        return function () return file:seek() end
-                    elseif msg == "goto:" then
-                        return function (pos) file:seek("set", pos) end
-                    elseif msg == "move:" then
-                        return function (dist) file:seek("cur", dist) end
-                    elseif msg == "size" then
-                        return function ()
-                            local pos = file:seek()
-                            local size = file:seek("end")
-                            file:seek("set", pos)
-                            return size
-                        end
-                    elseif msg == "close" then
-                        return function () file:close() end
-                    elseif msg == "makeString" then
-                        return function ()
-                            return "File(" .. filename .. ")"
-                        end
-                    end
-                end
-            end
+    system = {}
+    system["require:"] = function (filename)
+        filename = makePrimitiveString(filename)
+        
+        if loaded[filename] then return loaded[filename].result end
+        
+        local file = io.open(filename)
+        local code = file:read("*a")
+        file:close()
+        
+        local compiled = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
+        local fn, err = load(compiled, nil, "t", env)
+        
+        if not fn then
+            error(err)
         end
+        
+        loaded[filename] = {result = fn()}
+        return loaded[filename].result
+    end
+    system["open:"] = function (filename)
+        filename = makePrimitiveString(filename)
+        local file = io.open(filename)
+        
+        return {
+            read = function () return file:read() end,
+            ["read:"] = function (x) return file:read(makePrimitiveNumber(x)) end,
+            readAll = function () return file:read("*a") end,
+            ["write:"] = function (text)
+                file:write(lookup(text, "makeString")())
+                file:flush()
+            end,
+            position = function () return file:seek() end,
+            ["goto:"] = function (pos) file:seek("set", makePrimitiveNumber(pos)) end,
+            ["move:"] = function (dist) file:seek("cur", makePrimitiveNumber(dist)) end,
+            size = function ()
+                local pos = file:seek()
+                local size = file:seek("end")
+                file:seek("set", pos)
+                return size
+            end,
+            close = function () file:close() end,
+            makeString = function ()
+                return "File(" .. filename .. ")"
+            end
+        }
     end
     
     env = {
         lookupOrNil = lookupOrNil,
         lookup = lookup,
+        decorate = decorate,
         id = id,
         
         vartrue = true,
@@ -418,29 +371,14 @@ function Compiler.cases:define(term)
     return ("(function () %s = %s; return %s end)()"):format(var, self:compileTerm(term.value), var)
 end
 function Compiler.cases:object(term)
-    local decoVars, decoValues = {}, {}
-    
-    local oldAddDeco = self.addDecoration
-    function self:addDecoration(value)
-        table.insert(decoValues, value)
-        table.insert(decoVars, "deco" .. #decoValues)
-        return decoVars[#decoVars]
-    end
-    
     local elements = {}
     for _, element in ipairs(term) do
         table.insert(elements, self:compileTerm(element))
     end
     
-    self.addDecoration = oldAddDeco
+    elements = table.concat(elements, "; ")
     
-    elements = table.concat(elements, " or ")
-    decoVars, decoValues = table.concat(decoVars, ", "), table.concat(decoValues, ", ")
-    
-    if #decoVars == 0 then
-        return ("(function (msg) return %s end)"):format(elements)
-    end
-    return ("(function () local %s = %s; return function (msg) return %s end end)()"):format(decoVars, decoValues, elements)
+    return ("(function () local object = {}; %s; return object end)()"):format(elements)
 end
 function Compiler.cases:method(term)
     local parameters = {}
@@ -456,13 +394,11 @@ function Compiler.cases:method(term)
     end)
     
     parameters = table.concat(parameters, ", ")
-    return ("msg == %q and function (%s) return %s end"):format(term.name, parameters, expression)
+    return ("object[%q] = object[%q] or function (%s) return %s end"):format(term.name, term.name, parameters, expression)
 end
-function Compiler.cases:decorate(term, addDeco)
+function Compiler.cases:decorate(term)
     local value = self:compileTerm(term.value)
-    local var = self:addDecoration(value)
-    
-    return ("lookupOrNil(%s, msg)"):format(var)
+    return ("decorate(object, %s)"):format(value)
 end
 
 return Compiler
