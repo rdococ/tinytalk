@@ -1,18 +1,24 @@
-"Example defining a list data type using the visitor pattern"
+"`List with: first Before: rest` returns a linked list with the first item before the rest of the list. `List empty` returns an empty linked list."
 
 List :=
-    [cons: h With: t
-        [if: cases cases cons: h With: t
-        |head h
-        |tail t]
+    [with: first Before: rest
+        self := [if: cases          cases with: first Before: rest
+                |map: fn            List with: (fn of: first) Before: (rest map: fn)
+                |fold: fn Onto: id  fn of: first And: (rest fold: fn Onto: id)
+                |makeString         'List(', first makeString, rest makeRestString
+                |makeRestString     ', ', first makeString, rest makeRestString]
     |empty
-        [if: cases cases empty]].
-
-map :=
-    [over: ls With: fn
-        ls if: [cons: h With: t    List cons: (fn do: h) With: (map over: t With: fn)
-               |empty              ls]].
+        self := [if: cases          cases empty
+                |map: fn            List empty
+                |fold: fn Onto: id  id
+                |makeString         'List()'
+                |makeRestString     ')']].
 
 listTester := [test
-  l := map over: (List cons: 1 With: (List cons: 2 With: (List cons: 3 With: List empty))) With: [do: x x * 2].
-  console print: l tail tail head. "6"].
+    ls := (List with: 1 Before: (List with: 2 Before: (List with: 3 Before: List empty))).
+    mls := ls map:  [of: x         x * 2].
+    fls := ls fold: [of: x And: y  x * y] Onto: 1.
+    
+    console print: ls.  "List(1, 2, 3)"
+    console print: mls. "List(2, 4, 6)"
+    console print: fls. "6"].
