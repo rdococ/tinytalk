@@ -41,7 +41,7 @@ while true do
     end)
     if success then
         local success, result = pcall(function ()
-            return env.lookup(result, "makeString")()
+            return env.lookup(env.lookup(result, "makeString")(), "makePrimitive")()
         end)
         print(result)
     else
