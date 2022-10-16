@@ -10,16 +10,16 @@ program run: brainfuck machine"
 brainfuck := 
     [tokenize: char
         switch on: char
-        case: [if '+' | do [if: c c    inc]]
-        case: [if '-' | do [if: c c    dec]]
-        case: [if '<' | do [if: c c   left]]
-        case: [if '>' | do [if: c c  right]]
-        case: [if '[' | do [if: c c   loop]]
-        case: [if ']' | do [if: c c    end]]
-        case: [if ',' | do [if: c c  input]]
-        case: [if '.' | do [if: c c output]]
-        case: [if ''  | do [if: c c    end]]
-        else:          [do [if: c c   noop]]
+        case: [when '+' | do [if: c c    inc]]
+        case: [when '-' | do [if: c c    dec]]
+        case: [when '<' | do [if: c c   left]]
+        case: [when '>' | do [if: c c  right]]
+        case: [when '[' | do [if: c c   loop]]
+        case: [when ']' | do [if: c c    end]]
+        case: [when ',' | do [if: c c  input]]
+        case: [when '.' | do [if: c c output]]
+        case: [when ''  | do [if: c c    end]]
+        else:            [do [if: c c   noop]]
     |compile: code
         ip := Cell make: 0.
         self :=
