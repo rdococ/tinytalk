@@ -18,7 +18,7 @@ There are several builtin objects.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
 * The `Cell` factory can `make:` new mutable cells that can get their `value` or `put:` a new one.
 * The `Array` object can `make` arrays, that can get values `at:` a position, or `at:Put:`.
-* The `system` can `require:` Colang code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:`, `move:` and `close`.
+* The `system` can `require:` Tinytalk code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:`, `move:` and `close`.
 
 ## Syntax
 
