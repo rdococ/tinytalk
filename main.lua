@@ -22,8 +22,9 @@ StringReader = dofile("./StringReader.lua")
 Lexer = dofile("./Lexer.lua")
 Parser = dofile("./Parser.lua")
 Compiler = dofile("./Compiler.lua")
+Runtime = dofile("./Runtime.lua")
 
-local env = Compiler:createEnv()
+local env = Runtime:new()
 
 while true do
     io.write("> ")
