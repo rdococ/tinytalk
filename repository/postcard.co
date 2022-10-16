@@ -3,9 +3,9 @@
 console error: 'No syntax errors but you still can\'t run this!'.
 
 self := [exampleWithNumber: x
-"An object that illustrates every part of Tinytalk's syntax, paying
+"An object that illustrates every part of tinytalk's syntax, paying
 homage to the original 'Smalltalk on a postcard' syntax that
-inspired it. Tinytalk has less syntax, making this postcard smaller."
+inspired it. tinytalk has less syntax, making this postcard smaller."
     true and: false not and: (3 > 2) if: [true | false self halt].
     y := self size + self position.
     
