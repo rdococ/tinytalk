@@ -1,32 +1,34 @@
 "`brainfuck compile:` compiles brainfuck code into a program object. The program can `run:` on a machine, which will instruct the machine what to do.
 
-`brainfuck machine` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaBackend` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
+`brainfuck interpreter` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaCompiler` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
 
 program := brainfuck compile: '+++[>+<-]'.
-program run: brainfuck machine"
+program run: brainfuck interpreter"
 
 'switch' import.
 
 brainfuck := 
-    [tokenize: char
-        switch on: char
-        case: [when '+' | do [if: c c    inc]]
-        case: [when '-' | do [if: c c    dec]]
-        case: [when '<' | do [if: c c   left]]
-        case: [when '>' | do [if: c c  right]]
-        case: [when '[' | do [if: c c   loop]]
-        case: [when ']' | do [if: c c    end]]
-        case: [when ',' | do [if: c c  input]]
-        case: [when '.' | do [if: c c output]]
-        case: [when ''  | do [if: c c    end]]
-        else:            [do [if: c c   noop]]
-    |compile: code
+    [tokenizer: code
         ip := Cell make: 0.
+        [read
+            ip put: ip value + 1.
+            char := code at: ip value.
+            switch on: char
+            case: [when '+' | do [if: c c    inc]]
+            case: [when '-' | do [if: c c    dec]]
+            case: [when '<' | do [if: c c   left]]
+            case: [when '>' | do [if: c c  right]]
+            case: [when '[' | do [if: c c   loop]]
+            case: [when ']' | do [if: c c    end]]
+            case: [when ',' | do [if: c c  input]]
+            case: [when '.' | do [if: c c output]]
+            case: [when ''  | do [if: c c    end]]
+            else:                   [do self read]].
+    |compile: code
+        tokenizer := brainfuck tokenizer: code.
         self :=
-            [read
-                ip put: ip value + 1. brainfuck tokenize: (code at: ip value)
-            |continue
-                self read if:
+            [continue
+                tokenizer read if:
                     [inc     self compose: [run: m m inc] With: self continue.
                     |dec     self compose: [run: m m dec] With: self continue.
                     |left    self compose: [run: m m left] With: self continue.
@@ -36,14 +38,13 @@ brainfuck :=
                              self compose: [run: m m loop: body] With: self continue.
                     |end     [run: m]
                     |input   self compose: [run: m m input] With: self continue.
-                    |output  self compose: [run: m m output] With: self continue.
-                    |noop    self continue]
+                    |output  self compose: [run: m m output] With: self continue]
             |compose: a With: b
                 [run: m
                     a run: m.
                     b run: m]].
         program := self compose: self continue With: [run: m m end].
-    |machine
+    |interpreter
         tape := Array make.
         tape at: 1 Put: 0.
         tp := Cell make: 1.
@@ -63,7 +64,7 @@ brainfuck :=
                 |input  tp put: (console read: 1) byte.
                 |output console write: (tape at: tp value) character.
                 |end    tape]
-    |luaBackend
+    |luaCompiler
         code := Cell make: 'tape, tp = {0}, 1;'.
         code := [append: piece  code put: code value, piece | ...code].
         self := [inc         code append: 'tape[tp] = (tape[tp] + 1) % 256;'
