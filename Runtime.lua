@@ -145,7 +145,7 @@ function Runtime:new()
     end
     primitives.string.byte = string.byte
     primitives.string.import = function (self)
-        local filename = ("./repository/%s.co"):format(self)
+        local filename = ("./repository/%s.tiny"):format(self)
         if loaded[filename] then return loaded[filename].result end
         
         local file = io.open(filename)
