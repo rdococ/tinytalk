@@ -61,7 +61,7 @@ brainfuck :=
                     (tape at: tp value) > 0 if:
                         [true  body run: self. self loop: body.
                         |false]
-                |input  tp put: (console read: 1) byte.
+                |input  tape at: tp value Put: (console read: 1) byte.
                 |output console write: (tape at: tp value) character.
                 |end    tape]
     |luaCompiler
