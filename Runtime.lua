@@ -35,7 +35,7 @@ function Runtime:new()
     local function lookup(receiver, message)
         local method = lookupOrNil(receiver, message)
         if not method then
-            error(("Message not understood: %s"):format(message))
+            return function () error(("Message not understood: %s"):format(message)) end
         end
         return method
     end
