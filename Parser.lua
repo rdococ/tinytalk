@@ -90,17 +90,22 @@ end
 
 Parser.cases.msgopen = {precedence = 4}
 function Parser.cases.msgopen:handleTail(token, left)
-    return self:term {type = "message", msgtype = "keyword", receiver = left, name = token.value, self:parseRecursively(4)}
+    local term = self:term {type = "message", msgtype = "keyword", receiver = left, name = token.value, self:parseRecursively(4)}
+    
+    while true do
+        local next = self.lexer:peek()
+        
+        if not next or next.type ~= "msgnext" then return term end
+        self.lexer:read()
+        
+        term.name = term.name .. next.value
+        table.insert(term, self:parseRecursively(4))
+    end
 end
 
 Parser.cases.msgnext = {precedence = 4}
 function Parser.cases.msgnext:handleTail(token, left)
-    if left.msgtype ~= "keyword" then
-        self:error("Cannot start a keyword message with an uppercase letter")
-    end
-    left.name = left.name .. token.value
-    table.insert(left, self:parseRecursively(4))
-    return left
+    self:error("Cannot start a keyword message with an uppercase letter")
 end
 
 Parser.cases.define = {precedence = 3}
