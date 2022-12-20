@@ -30,7 +30,9 @@ while true do
     io.write("> ")
     local code = io.read()
     local success, result = pcall(function ()
-        local result = Compiler:compile(Parser:parse(Lexer:new(StringReader:new(code))))
+        local ast = Parser:parse(Lexer:new(StringReader:new(code)))
+        local result = Compiler:compile(ast)
+        print(result)
         
         local fn, err = load(result, nil, "t", env)
         if not fn then

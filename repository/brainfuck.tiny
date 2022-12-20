@@ -9,8 +9,10 @@ program run: brainfuck interpreter"
 
 brainfuck := 
     [tokenizer: code
+        :: ip self.
         ip := Cell make: 0.
         self := [read
+                :: char.
                 ip put: ip value + 1.
                 char := code at: ip value.
                 switch on: char
@@ -25,6 +27,7 @@ brainfuck :=
                 case: [when ''  | do [if: c c    end]]
                 else:                   [do self read]].
     |compile: code
+        :: tokenizer self program.
         tokenizer := brainfuck tokenizer: code.
         self :=
             [continue
@@ -33,7 +36,8 @@ brainfuck :=
                     |dec     self compose: [run: m m dec] With: self continue.
                     |left    self compose: [run: m m left] With: self continue.
                     |right   self compose: [run: m m right] With: self continue.
-                    |loop  
+                    |loop
+                             :: body.
                              body := self continue.
                              self compose: [run: m m loop: body] With: self continue.
                     |end     [run: m]
@@ -45,6 +49,7 @@ brainfuck :=
                     b run: m]].
         program := self compose: self continue With: [run: m m end].
     |interpreter
+        :: tape tp len self.
         tape := Array make.
         tape at: 1 Put: 0.
         tp := Cell make: 1.
@@ -65,6 +70,7 @@ brainfuck :=
                 |output console write: (tape at: tp value) character.
                 |end    tape]
     |luaCompiler
+        :: code self.
         code := Cell make: 'tape, tp = {0}, 1;'.
         code := [append: piece  code put: code value, piece | ...code].
         self := [inc         code append: 'tape[tp] = (tape[tp] + 1) % 256;'

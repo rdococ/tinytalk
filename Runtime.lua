@@ -175,7 +175,7 @@ function Runtime:new()
         return {
             value = function () return value end,
             ["put:"] = function (new) value = new; return value end,
-            makeString = function () return "Cell(" .. makePrimitiveString(text) .. ")" end
+            makeString = function () return "Cell(" .. makePrimitiveString(value) .. ")" end
         }
     end
     Cell.make = Cell["make:"]
@@ -258,6 +258,8 @@ function Runtime:new()
         lookup = lookup,
         decorate = decorate,
         id = id,
+        unpack = table.unpack,
+        error = console["error:"],
         
         vartrue = true,
         varfalse = false,

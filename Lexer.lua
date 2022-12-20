@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 --[[
 TOKEN ATTRIBUTES
     type
-        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
+        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof", "assign", "declare"
     line
     value
 ]]
@@ -193,6 +193,7 @@ addCase(strCase("]", "objclose"))
 addCase(strCase(".", "statclose"))
 addCase(strCase("(", "expropen"))
 addCase(strCase(")", "exprclose"))
-addCase(strCase(":=", "define"))
+addCase(strCase("::", "declare"))
+addCase(strCase(":=", "assign"))
 
 return Lexer

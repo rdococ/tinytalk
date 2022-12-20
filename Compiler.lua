@@ -16,106 +16,68 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
---[[
-TERM ATTRIBUTES
-    type
-        "variable", "message", "literal", "method", "define", "decorate", "object", "sequence"
-    line
-    value/expression/name/receiver/[1], [2], etc.
-]]
-
 local Compiler = {}
 Compiler.__index = Compiler
 
-function Compiler:pushScope()
-    self.scope = {varset = {}, variables = {}, defaults = {}, parent = self.scope}
-    return self.scope
-end
-function Compiler:popScope()
-    local scope = self.scope
-    self.scope = self.scope.parent
-    return scope
-end
-function Compiler:withScope(fn)
-    local scope = self:pushScope()
-    local result = fn()
-    self:popScope()
-    
-    local variables = table.concat(scope.variables, ", ")
-    local defaults = table.concat(scope.defaults, ", ")
-    
-    if #scope.variables == 0 then
-        return result
-    end
-    
-    return ("(function () local %s = %s; return %s end)()"):format(variables, defaults, result)
-end
-function Compiler:withGlobalScope(fn)
-    local scope = self:pushScope()
-    local result = fn()
-    self:popScope()
-    
-    local variables = table.concat(scope.variables, ", ")
-    local defaults = table.concat(scope.defaults, ", ")
-    
-    if #scope.variables == 0 then
-        return result
-    end
-    
-    return ("(function () %s = %s; return %s end)()"):format(variables, defaults, result)
-end
-
-function Compiler:addVariable(var, default)
-    if self.scope.varset[var] then return end
-    table.insert(self.scope.variables, var)
-    table.insert(self.scope.defaults, default or "nil")
-    self.scope.varset[var] = true
-end
-
 function Compiler:compile(term)
     local self = setmetatable({}, self)
-    return ("return %s"):format(self:withGlobalScope(function () return self:compileTerm(term) end))
+    return ([[local function newStack()
+    local self, stack, len = {}, {}, 0
+    function self.push(v) stack[len + 1] = v; len = len + 1 end
+    function self.pop() if len < 1 then error("Value stack pop on empty") end local v = stack[len]; stack[len] = nil; len = len - 1; return v end
+    function self.peek(n) return stack[len - (n or 0)] end
+    function self.len() return len end
+    function self.unpack() return unpack(stack, 1, len) end
+    return self
+end; %s; %s; local result = stack.pop(); if stack.len() > 0 then error("Value stack not empty at end") end; return result]]):format(self:newStack(), self:compileTerm(term))
 end
 function Compiler:compileTerm(term)
     return self.cases[term.type](self, term)
 end
 
+function Compiler:newStack()
+    return [[local stack, frames = newStack(), newStack()]]
+end
+
 Compiler.cases = {}
 
 function Compiler.cases:variable(term)
-    return ("var%s"):format(term.name)
+    return ("stack.push(var%s)"):format(term.name)
 end
 function Compiler.cases:literal(term)
     if type(term.value) == "string" then
-        return string.format("%q", term.value)
+        return ("stack.push(%q)"):format(term.value)
     end
-    return tostring(term.value)
+    return ("stack.push(%s)"):format(tostring(term.value))
 end
 function Compiler.cases:message(term)
-    local args = {}
+    local stmts = {}
     for _, arg in ipairs(term) do
-        table.insert(args, self:compileTerm(arg))
+        table.insert(stmts, self:compileTerm(arg))
+        table.insert(stmts, "frames.peek().push(stack.pop())")
     end
-    args = table.concat(args, ", ")
+    stmts = table.concat(stmts, "; ")
     
-    return ("lookup(%s, %q)(%s)"):format(self:compileTerm(term.receiver), term.name, args)
+    return ([[frames.push(newStack()); %s; %s; stack.push(lookup(stack.pop(), %q)(frames.pop().unpack()))]]):format(self:compileTerm(term.receiver), stmts, term.name)
 end
 function Compiler.cases:sequence(term)
-    local stats = {}
-    for _, stat in ipairs(term) do
-        table.insert(stats, ("id(%s)"):format(self:compileTerm(stat)))
+    local stmts = {}
+    for _, stmt in ipairs(term) do
+        table.insert(stmts, self:compileTerm(stmt))
+    end
+    return table.concat(stmts, "; stack.pop(); ")
+end
+function Compiler.cases:assign(term)
+    local var = ("var%s"):format(term.variable)
+    return ("%s; %s = stack.peek()"):format(self:compileTerm(term.value), var)
+end
+function Compiler.cases:declare(term)
+    local vars = {}
+    for _, var in ipairs(term) do
+        table.insert(vars, ("var%s"):format(var))
     end
     
-    local result = stats[#stats]
-    table.remove(stats)
-    stats = table.concat(stats, "; ")
-    
-    return ("(function () %s return %s end)()"):format(stats, result)
-end
-function Compiler.cases:define(term)
-    local var = ("var%s"):format(term.variable)
-    self:addVariable(var)
-    return ("(function () %s = %s; return %s end)()"):format(var, self:compileTerm(term.value), var)
+    return ("local %s; stack.push()"):format(table.concat(vars, ", "))
 end
 function Compiler.cases:object(term)
     local elements = {}
@@ -125,7 +87,7 @@ function Compiler.cases:object(term)
     
     elements = table.concat(elements, "; ")
     
-    return ("(function () local object = {}; %s; return object end)()"):format(elements)
+    return ("stack.push({}); %s;"):format(elements)
 end
 function Compiler.cases:method(term)
     local parameters = {}
@@ -133,19 +95,12 @@ function Compiler.cases:method(term)
         table.insert(parameters, ("var%s"):format(parameter))
     end
     
-    local expression = self:withScope(function ()
-        for _, parameter in ipairs(parameters) do
-            self:addVariable(parameter, parameter)
-        end
-        return term.expression and self:compileTerm(term.expression) or "nil"
-    end)
-    
     parameters = table.concat(parameters, ", ")
-    return ("object[%q] = object[%q] or function (%s) return %s end"):format(term.name, term.name, parameters, expression)
+    return ("stack.peek()[%q] = stack.peek()[%q] or function (%s) %s; %s; return stack.pop() end"):format(term.name, term.name, parameters, self:newStack(), self:compileTerm(term.expression))
 end
 function Compiler.cases:decorate(term)
     local value = self:compileTerm(term.value)
-    return ("decorate(object, %s)"):format(value)
+    return ("%s; decorate(stack.peek(1), stack.pop())"):format(value)
 end
 
 return Compiler

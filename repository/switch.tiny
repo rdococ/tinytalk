@@ -13,10 +13,11 @@ else: [do 'x is not 1 or 2!']."
 switch :=
     [case: case
         case when if:
-            [true  self := [case: c self | else: c case do]
+            [true  :: self. self := [case: c self | else: c case do]
             |false switch]
     |else: case
         case do
     |on: value
+        :: decorator.
         decorator := [for: s [case: c decorator for: (s case: [when c when = value | ...c]) | ...s]].
         decorator for: switch].

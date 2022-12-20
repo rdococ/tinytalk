@@ -17,15 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 --[[
-TOKEN ATTRIBUTES
-    type
-        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
-    line
-    value
-
 TERM ATTRIBUTES
     type
-        "variable", "message", "literal", "method", "define", "decorate", "object", "sequence"
+        "variable", "message", "literal", "method", "declare", "assign", "decorate", "object", "sequence"
     line
     value/expression/name/receiver/[1], [2], etc.
 ]]
@@ -54,7 +48,7 @@ function Parser:parseRecursively(prec)
     local token = self.lexer:read()
     
     local case = self.cases[token.type]
-    if not case.handleHead then self:error("Expected value, got %s", token.type) end
+    if not case.handleHead then self:error("Expected expression, got %s", token.type) end
     local left = case.handleHead(self, token)
     
     while (self.cases[self.lexer:peek().type].precedence or 0) > prec do
@@ -108,13 +102,27 @@ function Parser.cases.msgnext:handleTail(token, left)
     self:error("Cannot start a keyword message with an uppercase letter")
 end
 
-Parser.cases.define = {precedence = 3}
-function Parser.cases.define:handleTail(token, left)
+Parser.cases.declare = {precedence = 0}
+function Parser.cases.declare:handleHead(token)
+    local term = {type = "declare"}
+    local word = self.lexer:peek()
+    
+    while word.type == "word" do
+        self.lexer:read()
+        table.insert(term, word.value)
+        word = self.lexer:peek()
+    end
+    
+    return term
+end
+
+Parser.cases.assign = {precedence = 3}
+function Parser.cases.assign:handleTail(token, left)
     if left.type ~= "variable" then
         self:error("Expected variable, got %s", left.type)
     end
     
-    return self:term {type = "define", variable = left.name, value = self:parseRecursively(2)}
+    return self:term {type = "assign", variable = left.name, value = self:parseRecursively(2)}
 end
 
 Parser.cases.statclose = {precedence = 2}
