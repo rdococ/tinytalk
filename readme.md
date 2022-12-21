@@ -29,7 +29,7 @@ Square :=                                                   "Variable definition
     corner := origin + (Point atX: size Y: size).           "Binary operators & parentheses"
     [contains: point
       point >= origin and: point < corner                   "Keyword messages"
-    |origin  origin                                                                          
+    |origin  origin                                         "Method separator"
     |corner  corner
     |bottomLeft
       Point atX: origin x Y: corner y                       "Unary messages"
