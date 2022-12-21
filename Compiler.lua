@@ -16,14 +16,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
---[[
-TERM ATTRIBUTES
-    type
-        "variable", "message", "literal", "method", "define", "decorate", "object", "sequence"
-    line
-    value/expression/name/receiver/[1], [2], etc.
-]]
-
 local Compiler = {}
 Compiler.__index = Compiler
 
@@ -115,6 +107,10 @@ end
 function Compiler.cases:define(term)
     local var = ("var%s"):format(term.variable)
     self:addVariable(var)
+    return ("(function () %s = %s; return %s end)()"):format(var, self:compileTerm(term.value), var)
+end
+function Compiler.cases:assign(term)
+    local var = ("var%s"):format(term.variable)
     return ("(function () %s = %s; return %s end)()"):format(var, self:compileTerm(term.value), var)
 end
 function Compiler.cases:object(term)

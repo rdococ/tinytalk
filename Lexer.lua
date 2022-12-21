@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 --[[
 TOKEN ATTRIBUTES
     type
-        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
+        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "assign", "eof"
     line
     value
 ]]
@@ -157,6 +157,7 @@ addCase(function (self)
     
     return self:token {type = "word", value = value}
 end)
+addCase(strCase("<-", "assign"))
 addCase(function (self)
     if not binopChars[self.reader:peek()] then return end
     local value = self.reader:read()

@@ -17,15 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 --[[
-TOKEN ATTRIBUTES
-    type
-        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "eof"
-    line
-    value
-
 TERM ATTRIBUTES
     type
-        "variable", "message", "literal", "method", "define", "decorate", "object", "sequence"
+        "variable", "message", "literal", "method", "define", "assign", "decorate", "object", "sequence"
     line
     value/expression/name/receiver/[1], [2], etc.
 ]]
@@ -115,6 +109,15 @@ function Parser.cases.define:handleTail(token, left)
     end
     
     return self:term {type = "define", variable = left.name, value = self:parseRecursively(2)}
+end
+
+Parser.cases.assign = {precedence = 3}
+function Parser.cases.assign:handleTail(token, left)
+    if left.type ~= "variable" then
+        self:error("Expected variable, got %s", left.type)
+    end
+    
+    return self:term {type = "assign", variable = left.name, value = self:parseRecursively(2)}
 end
 
 Parser.cases.statclose = {precedence = 2}
