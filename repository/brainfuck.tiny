@@ -1,18 +1,18 @@
-"`brainfuck compile:` compiles brainfuck code into a program object. The program can `run:` on a machine, which will instruct the machine what to do.
+"`brainfuck compile:` compiles brainfuck code into a program object. The program can then `instruct:` a backend object on what to do.
 
-`brainfuck interpreter` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaCompiler` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
+`brainfuck interpreter` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaBackend` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
 
 program := brainfuck compile: '+++[>+<-]'.
-program run: brainfuck interpreter"
+program instruct: brainfuck interpreter"
 
 'switch' import.
 
 brainfuck := 
     [tokenizer: code
-        ip := Cell make: 0.
+        ip := 0.
         self := [read
-                ip put: ip value + 1.
-                char := code at: ip value.
+                ip <- ip + 1.
+                char := code at: ip.
                 switch on: char
                 case: [when '+' | do [if: c c    inc]]
                 case: [when '-' | do [if: c c    dec]]
@@ -29,50 +29,50 @@ brainfuck :=
         self :=
             [continue
                 tokenizer read if:
-                    [inc     self compose: [run: m m inc] With: self continue.
-                    |dec     self compose: [run: m m dec] With: self continue.
-                    |left    self compose: [run: m m left] With: self continue.
-                    |right   self compose: [run: m m right] With: self continue.
+                    [inc     self compose: [instruct: m m inc] With: self continue.
+                    |dec     self compose: [instruct: m m dec] With: self continue.
+                    |left    self compose: [instruct: m m left] With: self continue.
+                    |right   self compose: [instruct: m m right] With: self continue.
                     |loop  
                              body := self continue.
-                             self compose: [run: m m loop: body] With: self continue.
-                    |end     [run: m]
-                    |input   self compose: [run: m m input] With: self continue.
-                    |output  self compose: [run: m m output] With: self continue]
+                             self compose: [instruct: m m loop: body] With: self continue.
+                    |end     [instruct: m]
+                    |input   self compose: [instruct: m m input] With: self continue.
+                    |output  self compose: [instruct: m m output] With: self continue]
             |compose: a With: b
-                [run: m
-                    a run: m.
-                    b run: m]].
-        program := self compose: self continue With: [run: m m end].
+                [instruct: m
+                    a instruct: m.
+                    b instruct: m]].
+        program := self compose: self continue With: [instruct: m m end].
     |interpreter
         tape := Array make.
         tape at: 1 Put: 0.
-        tp := Cell make: 1.
-        len := Cell make: 1.
-        self := [inc    tape at: tp value Put: (tape at: tp value) + 1 % 256.
-                |dec    tape at: tp value Put: (tape at: tp value) - 1 % 256.
-                |left   tp put: tp value - 1.
-                        tp value < 1 if: [true console error: 'Tape pointer exceeded left edge' | false].
-                |right  tp put: tp value + 1.
-                        tp value > len value if:
-                            [true  len put: len value + 1. tape at: tp value Put: 0.
+        tp := 1.
+        len := 1.
+        self := [inc    tape at: tp Put: (tape at: tp) + 1 % 256.
+                |dec    tape at: tp Put: (tape at: tp) - 1 % 256.
+                |left   tp <- tp - 1.
+                        tp < 1 if: [true console error: 'Tape pointer exceeded left edge' | false].
+                |right  tp <- tp + 1.
+                        tp > len if:
+                            [true  len <- len + 1. tape at: tp Put: 0.
                             |false].
                 |loop: body
-                    (tape at: tp value) > 0 if:
-                        [true  body run: self. self loop: body.
+                    (tape at: tp) > 0 if:
+                        [true  body instruct: self. self loop: body.
                         |false]
-                |input  tape at: tp value Put: (console read: 1) byte.
-                |output console write: (tape at: tp value) character.
+                |input  tape at: tp Put: (console read: 1) byte.
+                |output console write: (tape at: tp) character.
                 |end    tape]
-    |luaCompiler
-        code := Cell make: 'tape, tp = {0}, 1;'.
-        code := [append: piece  code put: code value, piece | ...code].
+    |luaBackend
+        rawCode := 'tape, tp = {0}, 1;'.
+        code := [append: piece  rawCode <- rawCode, piece | value rawCode].
         self := [inc         code append: 'tape[tp] = (tape[tp] + 1) % 256;'
                 |dec         code append: 'tape[tp] = (tape[tp] - 1) % 256;'
                 |left        code append: 'tp = tp - 1;'
                 |right       code append: 'tp = tp + 1;tape[tp] = tape[tp] or 0;'
                 |loop: body  code append: 'while tape[tp] > 0 do '.
-                             body run: self.
+                             body instruct: self.
                              code append: ' end;'
                 |input       code append: 'tape[tp] = io.read(1):byte();'
                 |output      code append: 'io.write(string.char(tape[tp]));'

@@ -1,11 +1,11 @@
 "Constructing graphics combinator objects and drawing them to the console
 shapeTester test"
 
-'Vector' import.
+'Point' import.
 
 Square :=
   [at: origin WithSize: size
-    corner := origin + (Vector makeX: size Y: size).
+    corner := origin + (Point atX: size Y: size).
     [contains: point
       point >= origin and: point < corner
     |origin  origin
@@ -14,8 +14,8 @@ Square :=
 Circle :=
   [at: centre WithRadius: radius
     [contains: point  (point - centre) size < radius
-    |origin  Vector makeX: centre x - radius Y: centre y - radius
-    |corner  Vector makeX: centre x + radius Y: centre y + radius]].
+    |origin  Point atX: centre x - radius Y: centre y - radius
+    |corner  Point atX: centre x + radius Y: centre y + radius]].
 
 Union :=
   [of: shapeA And: shapeB
@@ -41,7 +41,7 @@ Drawer :=
   [draw: shape
     For from: shape origin y To: shape corner y Do: [with: y
       For from: shape origin x To: shape corner x Do: [with: x
-        shape contains: (Vector makeX: x Y: y) if:
+        shape contains: (Point atX: x Y: y) if:
           [true   console write: '#'
           |false  console write: ' ']].
       console print: '']].
@@ -50,6 +50,6 @@ shapeTester :=
   [test
     Drawer draw:
       (Union of:
-        (Circle at: (Vector makeX: 0 Y: 0) WithRadius: 5)
+        (Circle at: (Point atX: 0 Y: 0) WithRadius: 5)
       And:
-        (Square at: (Vector makeX: -10 Y: -10) WithSize: 10))].
+        (Square at: (Point atX: -10 Y: -10) WithSize: 10))].

@@ -1,9 +1,9 @@
 "Example defining a counter object and using object decoration to log increments"
 
 Counter := [make: n
-             number := Cell make: n.
+             number := n.
              [increment: n
-               number put: number + n
+               number <- number + n
              |value
                number value
              |makeString

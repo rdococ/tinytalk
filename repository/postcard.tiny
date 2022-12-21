@@ -8,6 +8,7 @@ homage to the original 'Smalltalk on a postcard' syntax that
 inspired it. tinytalk has less syntax, making this postcard smaller."
     true and: false not and: (3 > 2) if: [true | false self halt].
     y := self size + self position.
+    y <- y + 1.
     
     List with: 'a \'banana\'' And: 1 And: 1.0 do: [with: each
         Transcript show: (each type).

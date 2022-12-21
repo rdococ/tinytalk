@@ -1,0 +1,14 @@
+Point := [atX: x Y: y
+            a := [+ b          Point atX: x + b x Y: y + b y
+                 |- b          Point atX: x - b x Y: y - b y
+                 |size         (x * x + (y * y)) sqrt
+                 |makeString   'Point(', x, ', ', y, ')'
+                 |x            x
+                 |y            y
+                 |origin: b    Point atX: (x smaller: b x) Y: (y smaller: b y)
+                 |corner: b    Point atX: (x larger: b x) Y: (y larger: b y)
+                 |< b          a x < b x and: a y < b y
+                 |= b          a x = b x and: a y = b y
+                 |> b          b < a
+                 |<= b         a x <= b x and: a y <= b y
+                 |>= b         b <= a]].
