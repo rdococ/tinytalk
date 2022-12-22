@@ -143,6 +143,7 @@ function Runtime:new()
     primitives.string["from:To:"] = function (self, i, j)
         return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(j))
     end
+    primitives.string.size = function (self) return #self end
     primitives.string.byte = string.byte
     primitives.string.import = function (self)
         local filename = ("./repository/%s.tiny"):format(self)
