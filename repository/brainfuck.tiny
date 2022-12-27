@@ -8,42 +8,40 @@ program instruct: brainfuck interpreter"
 'switch' import.
 
 brainfuck := 
-    [tokenizer: code
+    [compile: code
         ip := 0.
-        self := [read
-                ip <- ip + 1.
-                char := code at: ip.
-                switch on: char
-                case: [when '+' | do [if: c c    inc]]
-                case: [when '-' | do [if: c c    dec]]
-                case: [when '<' | do [if: c c   left]]
-                case: [when '>' | do [if: c c  right]]
-                case: [when '[' | do [if: c c   loop]]
-                case: [when ']' | do [if: c c    end]]
-                case: [when ',' | do [if: c c  input]]
-                case: [when '.' | do [if: c c output]]
-                case: [when ''  | do [if: c c    end]]
-                else:                   [do self read]].
-    |compile: code
-        tokenizer := brainfuck tokenizer: code.
+        tokenizer := [read
+                       ip <- ip + 1.
+                       char := code at: ip.
+                       switch on: char
+                       case: [when '+' | do [if: c c    inc]]
+                       case: [when '-' | do [if: c c    dec]]
+                       case: [when '<' | do [if: c c   left]]
+                       case: [when '>' | do [if: c c  right]]
+                       case: [when '[' | do [if: c c   loop]]
+                       case: [when ']' | do [if: c c    end]]
+                       case: [when ',' | do [if: c c  input]]
+                       case: [when '.' | do [if: c c output]]
+                       case: [when ''  | do [if: c c    end]]
+                       else:             [do  tokenizer read]].
         self :=
-            [continue
+            [next
                 tokenizer read if:
-                    [inc     self compose: [instruct: m m inc] With: self continue.
-                    |dec     self compose: [instruct: m m dec] With: self continue.
-                    |left    self compose: [instruct: m m left] With: self continue.
-                    |right   self compose: [instruct: m m right] With: self continue.
+                    [inc     self compose: [instruct: m m inc] With: self next.
+                    |dec     self compose: [instruct: m m dec] With: self next.
+                    |left    self compose: [instruct: m m left] With: self next.
+                    |right   self compose: [instruct: m m right] With: self next.
                     |loop  
-                             body := self continue.
-                             self compose: [instruct: m m loop: body] With: self continue.
+                             body := self next.
+                             self compose: [instruct: m m loop: body] With: self next.
                     |end     [instruct: m]
-                    |input   self compose: [instruct: m m input] With: self continue.
-                    |output  self compose: [instruct: m m output] With: self continue]
+                    |input   self compose: [instruct: m m input] With: self next.
+                    |output  self compose: [instruct: m m output] With: self next]
             |compose: a With: b
                 [instruct: m
                     a instruct: m.
                     b instruct: m]].
-        program := self compose: self continue With: [instruct: m m end].
+        program := self compose: self next With: [instruct: m m end].
     |interpreter
         tape := Array make.
         tape at: 1 Put: 0.
