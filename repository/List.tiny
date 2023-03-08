@@ -5,14 +5,14 @@ List :=
         self := [if: cases          cases with: first Before: rest
                 |map: fn            List with: (fn of: first) Before: (rest map: fn)
                 |fold: fn Onto: id  fn of: first And: (rest fold: fn Onto: id)
-                |makeString         'List(', first makeString, rest makeRestString
-                |makeRestString     ', ', first makeString, rest makeRestString]
+                |asString         'List(', first asString, rest asRestString
+                |asRestString     ', ', first asString, rest asRestString]
     |empty
         self := [if: cases          cases empty
                 |map: fn            List empty
                 |fold: fn Onto: id  id
-                |makeString         'List()'
-                |makeRestString     ')']].
+                |asString         'List()'
+                |asRestString     ')']].
 
 listTester := [test
     ls := (List with: 1 Before: (List with: 2 Before: (List with: 3 Before: List empty))).

@@ -5,4 +5,4 @@ fib := [of: n
         [true 1
         |false (fib of: n - 1) + (fib of: n - 2)]].
 
-console print: (fib of: console read makeNumber).
+console print: (fib of: console read asNumber).

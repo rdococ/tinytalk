@@ -1,6 +1,6 @@
 --[[
 An implementation for a purely object-oriented toy programming language.
-Copyright (C) 2022 rdococ
+Copyright (C) 2022-2023 rdococ
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -41,7 +41,7 @@ while true do
     end)
     if success then
         local success, result = pcall(function ()
-            return env.lookup(env.lookup(result, "makeString")(), "makePrimitive")()
+            return env.lookup(env.lookup(result, "asString")(), "asPrimitive")()
         end)
         print(result)
     else

@@ -1,6 +1,6 @@
 --[[
 An implementation for a purely object-oriented toy programming language.
-Copyright (C) 2022 rdococ
+Copyright (C) 2022-2023 rdococ
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published

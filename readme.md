@@ -1,23 +1,19 @@
 ![# tinytalk](logo.png)
 
-tinytalk is a minimalistic, purely object-oriented toy programming language.
+tinytalk is a purely object-oriented toy language.
 
 ## Semantics
 
-* An object is a set of methods.
-* You can send a message to an object, which runs the matching method.
-* Objects can decorate other objects to copy their methods.
-* You can use variables to store intermediary values.
-* Variables are hoisted to the top of the method, but their values aren't assigned until the definition is reached.
+Every value is an object, and an object is just a record of methods (i.e. closures) you can call. Objects can decorate other objects, copying their methods. Variables are mutable and hoisted to the top of the method, but the initial value is not.
 
 ## Utilities
 
-There are several builtin objects.
+There are several builtin convenience objects.
 
 * Numbers, strings and booleans implement a variety of operators. Strings can `import` the file with their name in the repository, e.g. `'brainfuck' import`.
 * Booleans implement `if:`, sending `true` or `false`.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
-* The `Array` object can `make` arrays, that can get values `at:` a position, or `at:Put:`.
+* The `Array` object can create `new` arrays, that can get values `at:` a position, or `at:Put:`.
 * The `system` can `require:` tinytalk code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:`, `move:` and `close`.
 
 ## Syntax

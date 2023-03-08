@@ -43,7 +43,7 @@ brainfuck :=
                     b instruct: m]].
         program := self compose: self next With: [instruct: m m end].
     |interpreter
-        tape := Array make.
+        tape := Array new.
         tape at: 1 Put: 0.
         tp := 1.
         len := 1.

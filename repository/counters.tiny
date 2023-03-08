@@ -1,21 +1,21 @@
 "Example defining a counter object and using object decoration to log increments"
 
-Counter := [make: n
+Counter := [new: n
              number := n.
              [increment: n
                number <- number + n
              |value
                number value
-             |makeString
+             |newString
                'Counter at ' , number]
-           |make Counter make: 0].
-LoggedCounter := [make: counter
+           |new Counter new: 0].
+LoggedCounter := [new: counter
     [increment: n
       console print: 'Logged counter incremented by ' , n.
       counter increment: n.
     | ...counter]].
 
-counter := LoggedCounter make: Counter make.
+counter := LoggedCounter new: Counter new.
 counter increment: 3.
 counter increment: 2.
 console print: counter. "Counter at 5"

@@ -12,5 +12,5 @@ forever := [do: body
              forever do: body].
 
 forever do: [do
-    x := console read makeNumber.
+    x := console read asNumber.
     console print: (odds contains: x)].

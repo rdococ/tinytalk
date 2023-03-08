@@ -1,6 +1,6 @@
 --[[
 An implementation for a purely object-oriented toy programming language.
-Copyright (C) 2022 rdococ
+Copyright (C) 2022-2023 rdococ
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -50,21 +50,21 @@ function Runtime:new()
             object[message] = object[message] or method
         end
     end
-    local function makePrimitiveString(receiver)
-        return lookup(lookup(receiver, "makeString")(), "makePrimitive")()
+    local function asPrimitiveString(receiver)
+        return lookup(lookup(receiver, "asString")(), "asPrimitive")()
     end
-    local function makePrimitiveNumber(receiver)
-        return lookup(lookup(receiver, "makeNumber")(), "makePrimitive")()
+    local function asPrimitiveNumber(receiver)
+        return lookup(lookup(receiver, "asNumber")(), "asPrimitive")()
     end
     local loaded = setmetatable({}, {__mode = "v"})
     
     primitives["nil"] = {}
-    primitives["nil"].makePrimitive = id
-    primitives["nil"].makeString = tostring
+    primitives["nil"].asPrimitive = id
+    primitives["nil"].asString = tostring
 
     primitives.boolean = {}
-    primitives.boolean.makePrimitive = id
-    primitives.boolean.makeString = tostring
+    primitives.boolean.asPrimitive = id
+    primitives.boolean.asString = tostring
     primitives.boolean["if:"] = function (self, cases)
         return lookup(cases, tostring(self))()
     end
@@ -79,41 +79,41 @@ function Runtime:new()
     end
 
     primitives.number = {}
-    primitives.number.makePrimitive = id
-    primitives.number.makeNumber = id
-    primitives.number.makeString = tostring
+    primitives.number.asPrimitive = id
+    primitives.number.asNumber = id
+    primitives.number.asString = tostring
     primitives.number["+"] = function (a, b)
-        return a + makePrimitiveNumber(b)
+        return a + asPrimitiveNumber(b)
     end
     primitives.number["-"] = function (a, b)
-        return a - makePrimitiveNumber(b)
+        return a - asPrimitiveNumber(b)
     end
     primitives.number["*"] = function (a, b)
-        return a * makePrimitiveNumber(b)
+        return a * asPrimitiveNumber(b)
     end
     primitives.number["/"] = function (a, b)
-        return a / makePrimitiveNumber(b)
+        return a / asPrimitiveNumber(b)
     end
     primitives.number["%"] = function (a, b)
-        return a % makePrimitiveNumber(b)
+        return a % asPrimitiveNumber(b)
     end
     primitives.number["^"] = function (a, b)
-        return a ^ makePrimitiveNumber(b)
+        return a ^ asPrimitiveNumber(b)
     end
     primitives.number["<"] = function (a, b)
-        return a < makePrimitiveNumber(b)
+        return a < asPrimitiveNumber(b)
     end
     primitives.number["="] = function (a, b)
-        return a == (lookupOrNil(b, "makePrimitive") or id)()
+        return a == (lookupOrNil(b, "asPrimitive") or id)()
     end
     primitives.number[">"] = function (a, b)
-        return a > makePrimitiveNumber(b)
+        return a > asPrimitiveNumber(b)
     end
     primitives.number["<="] = function (a, b)
-        return a <= makePrimitiveNumber(b)
+        return a <= asPrimitiveNumber(b)
     end
     primitives.number[">="] = function (a, b)
-        return a >= makePrimitiveNumber(b)
+        return a >= asPrimitiveNumber(b)
     end
     primitives.number["larger:"] = math.max
     primitives.number["smaller:"] = math.min
@@ -128,20 +128,20 @@ function Runtime:new()
     primitives.number.character = string.char
 
     primitives.string = {}
-    primitives.string.makePrimitive = id
-    primitives.string.makeNumber = tonumber
-    primitives.string.makeString = tostring
+    primitives.string.asPrimitive = id
+    primitives.string.asNumber = tonumber
+    primitives.string.asString = tostring
     primitives.string["="] = function (a, b)
-        return a == (lookupOrNil(b, "makePrimitive") or id)()
+        return a == (lookupOrNil(b, "asPrimitive") or id)()
     end
     primitives.string[","] = function (a, b)
-        return a .. makePrimitiveString(b)
+        return a .. asPrimitiveString(b)
     end
     primitives.string["at:"] = function (self, i)
-        return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(i))
+        return self:sub(asPrimitiveNumber(i), asPrimitiveNumber(i))
     end
     primitives.string["from:To:"] = function (self, i, j)
-        return self:sub(makePrimitiveNumber(i), makePrimitiveNumber(j))
+        return self:sub(asPrimitiveNumber(i), asPrimitiveNumber(j))
     end
     primitives.string.size = function (self) return #self end
     primitives.string.byte = string.byte
@@ -165,41 +165,41 @@ function Runtime:new()
     end
     
     local console = {}
-    console["print:"] = function (text) print(makePrimitiveString(text)) end
-    console["write:"] = function (text) io.write(makePrimitiveString(text)) end
-    console["error:"] = function (text) error(makePrimitiveString(text)) end
+    console["print:"] = function (text) print(asPrimitiveString(text)) end
+    console["write:"] = function (text) io.write(asPrimitiveString(text)) end
+    console["error:"] = function (text) error(asPrimitiveString(text)) end
     console.read = io.read
-    console["read:"] = function (n) return io.read(makePrimitiveNumber(n)) end
+    console["read:"] = function (n) return io.read(asPrimitiveNumber(n)) end
     
     local Cell = {}
-    Cell["make:"] = function (value)
+    Cell["new:"] = function (value)
         return {
             value = function () return value end,
             ["put:"] = function (new) value = new; return value end,
-            makeString = function () return "Cell(" .. makePrimitiveString(text) .. ")" end
+            asString = function () return "Cell(" .. asPrimitiveString(text) .. ")" end
         }
     end
-    Cell.make = Cell["make:"]
+    Cell.new = Cell["new:"]
     
     local Array = {}
-    Array.make = function ()
+    Array.new = function ()
         local items = {}
         return {
             ["at:"] = function (n, value)
-                n = makePrimitiveNumber(n)
+                n = asPrimitiveNumber(n)
                 if type(n) ~= "number" then return end
                 return items[n]
             end,
             ["at:Put:"] = function (n, value)
-                n = makePrimitiveNumber(n)
+                n = asPrimitiveNumber(n)
                 if type(n) ~= "number" or math.floor(n) ~= n then error("Cannot use non-integer array keys") end
                 items[n] = value
             end,
             size = function () return #items end,
-            makeString = function ()
+            asString = function ()
                 local itemStrs = {}
                 for _, item in ipairs(items) do
-                    table.insert(itemStrs, makePrimitiveString(item))
+                    table.insert(itemStrs, asPrimitiveString(item))
                 end
                 return "Array(" .. table.concat(itemStrs, ", ") .. ")"
             end
@@ -208,7 +208,7 @@ function Runtime:new()
     
     system = {}
     system["require:"] = function (filename)
-        filename = makePrimitiveString(filename)
+        filename = asPrimitiveString(filename)
         
         if loaded[filename] then return loaded[filename].result end
         
@@ -227,20 +227,20 @@ function Runtime:new()
         return loaded[filename].result
     end
     system["open:"] = function (filename)
-        filename = makePrimitiveString(filename)
+        filename = asPrimitiveString(filename)
         local file = io.open(filename)
         
         return {
             read = function () return file:read() end,
-            ["read:"] = function (x) return file:read(makePrimitiveNumber(x)) end,
+            ["read:"] = function (x) return file:read(asPrimitiveNumber(x)) end,
             readAll = function () return file:read("*a") end,
             ["write:"] = function (text)
-                file:write(lookup(text, "makeString")())
+                file:write(lookup(text, "asString")())
                 file:flush()
             end,
             position = function () return file:seek() end,
-            ["goto:"] = function (pos) file:seek("set", makePrimitiveNumber(pos)) end,
-            ["move:"] = function (dist) file:seek("cur", makePrimitiveNumber(dist)) end,
+            ["goto:"] = function (pos) file:seek("set", asPrimitiveNumber(pos)) end,
+            ["move:"] = function (dist) file:seek("cur", asPrimitiveNumber(dist)) end,
             size = function ()
                 local pos = file:seek()
                 local size = file:seek("end")
@@ -248,7 +248,7 @@ function Runtime:new()
                 return size
             end,
             close = function () file:close() end,
-            makeString = function ()
+            asString = function ()
                 return "File(" .. filename .. ")"
             end
         }

@@ -15,6 +15,6 @@ console print: 2 + 4 > 3. "true"
 console print: (2 max: 4 + 3.5 floor). "7"
 
 "Keyword operators are currently left-associative"
-c := Cell make: 4.5.
+c := Cell new: 4.5.
 c put: (c min: 5 max: 3). "c put: (c min: 5) max: 3"
 console print: c. "4.5"
