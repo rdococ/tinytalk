@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="200"
-   height="54.433502"
-   viewBox="0 0 52.916666 14.402198"
+   width="181.09834"
+   height="71.886292"
+   viewBox="0 0 47.915602 19.019915"
    version="1.1"
    id="svg64303"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
@@ -27,9 +27,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="2.8237469"
-     inkscape:cx="59.849556"
-     inkscape:cy="50.464862"
+     inkscape:zoom="3.9933812"
+     inkscape:cx="103.42113"
+     inkscape:cy="31.301795"
      inkscape:window-width="1920"
      inkscape:window-height="1001"
      inkscape:window-x="-9"
@@ -42,22 +42,25 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-24.545857,-73.94259)">
+     transform="translate(-24.171059,-71.633732)">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.0221px;line-height:1.1;font-family:'Product Sans';-inkscape-font-specification:'Product Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#3d80ff;fill-opacity:1;stroke:none;stroke-width:0.443935;stroke-linecap:butt;stroke-linejoin:round"
-       x="24.170765"
-       y="83.836143"
-       id="text44567"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.8023px;line-height:1.1;font-family:'Product Sans';-inkscape-font-specification:'Product Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#3d6bff;fill-opacity:1;stroke:none;stroke-width:0.402351;stroke-linecap:butt;stroke-linejoin:round"
+       x="29.375017"
+       y="84.542938"
+       id="text1587-5-0-3-2-4-2-9-8-2"><tspan
          sodipodi:role="line"
-         id="tspan44565"
-         x="24.170765"
-         y="83.836143"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'DejaVu Serif';-inkscape-font-specification:'DejaVu Serif';fill:#3d80ff;fill-opacity:1;stroke-width:0.443935;stroke-linecap:butt;stroke-linejoin:round">tinytalk</tspan></text>
+         id="tspan1585-8-1-2-9-3-2-3-5-4"
+         x="29.375017"
+         y="84.542938"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Product Sans';-inkscape-font-specification:'Product Sans';fill:#3d6bff;fill-opacity:1;stroke-width:0.402351;stroke-linecap:butt;stroke-linejoin:round">tinytalk</tspan></text>
     <path
-       style="fill:#3d6cff;fill-opacity:1;stroke:none;stroke-width:0.229204px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 50.157825,85.550804 c 8.706335,0.08542 17.510754,-0.417663 25.971216,1.142992 v -9.334434 l 1.333483,10.985425 C 69.036988,86.24577 59.512359,86.045188 50.157825,85.550804 Z"
-       id="path55668"
-       sodipodi:nodetypes="ccccc" />
+       id="rect1272"
+       style="fill:#3d41ff;fill-opacity:1;stroke:none;stroke-width:0.431911;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:5;stroke-opacity:1"
+       d="m 24.171059,71.633732 v 1.497649 16.024625 1.49764 h 1.497649 2.184201 v -1.49764 H 25.668708 V 73.131381 h 2.184201 v -1.497649 h -2.184201 z" />
+    <path
+       id="path2667"
+       style="fill:#3d41ff;fill-opacity:1;stroke:none;stroke-width:0.431911;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:5;stroke-opacity:1"
+       d="m 72.086663,71.633732 v 1.497649 16.024625 1.49764 h -1.497649 -2.184201 v -1.49764 h 2.184201 V 73.131381 h -2.184201 v -1.497649 h 2.184201 z" />
   </g>
 </svg>
