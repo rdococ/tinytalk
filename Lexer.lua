@@ -16,14 +16,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
---[[
-TOKEN ATTRIBUTES
-    type
-        "word", "binop", "msgopen", "msgnext", "statclose", "literal", "objopen", "objclose", "expropen", "exprclose", "objnext", "objdeco", "define", "assign", "eof"
-    line
-    value
-]]
-
 local Lexer = {}
 Lexer.__index = Lexer
 
