@@ -1,0 +1,21 @@
+Complex :=
+    [re: real Im: imaginary
+        real := [...real |re real] re - [...imaginary |im 0] im.
+        imaginary := [...imaginary |re imaginary] re + [...real |im 0] im.
+        [+ other
+            other := Complex force: other
+            Complex re: real + other re im: imaginary + other im
+        |- other
+            other := Complex force: other
+            Complex re: real - other re im: imaginary - other im
+        |* other
+            other := Complex force: other
+            Complex re: (real * other re) - (imaginary * other im) im: (real * other im) + (imaginary * other re)
+        |negate
+            Complex re: real negate im: imaginary negate
+        |re  real
+        |im  imaginary
+        |asString
+            real asString, ' + ', imaginary asString, 'i']
+    |force: n
+        [...n |re n |im 0]].

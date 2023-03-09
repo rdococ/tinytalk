@@ -126,7 +126,19 @@ function Runtime:new()
     primitives.number.tan = math.tan
     primitives.number.negate = function (x) return -x end
     primitives.number.character = string.char
-
+    primitives.number["random:"] = math.random
+    primitives.number["to:"] = function (a, b)
+        return {
+            asString = function () return ("%s to: %s"):format(asPrimitiveString(a), asPrimitiveString(b)) end,
+            ["do:"] = function (body)
+                local with = lookup(body, "with:")
+                for i = a, b do
+                    with(i)
+                end
+            end
+        }
+    end
+    
     primitives.string = {}
     primitives.string.asPrimitive = id
     primitives.string.asNumber = tonumber
@@ -201,7 +213,7 @@ function Runtime:new()
                 for _, item in ipairs(items) do
                     table.insert(itemStrs, asPrimitiveString(item))
                 end
-                return "Array(" .. table.concat(itemStrs, ", ") .. ")"
+                return "{" .. table.concat(itemStrs, ", ") .. "}"
             end
         }
     end
