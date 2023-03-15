@@ -2,7 +2,7 @@
 
 ```
 Animal := [new
-            health := 100
+            health := 100.
             [die
               health <- 0.
             |health
