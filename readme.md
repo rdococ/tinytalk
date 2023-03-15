@@ -2,7 +2,11 @@
 
 ```
 Animal := [new
-            []].
+            health := 100
+            [die
+              health <- 0.
+            |health
+              health]].
 Cat := [new
          [makeSound
            console print: 'Meow!'.
@@ -14,6 +18,7 @@ Dog := [new
 
 peppy := Cat new.
 peppy makeSound. "This will print 'Meow!'"
+console print: peppy health. "100"
 ```
 
 A purely object-oriented toy language, demonstrating how OOP does not need inheritance, traditional classes or prototypes.
