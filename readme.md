@@ -20,14 +20,18 @@ A purely object-oriented toy language, demonstrating how OOP does not need inher
 
 ## Semantics
 
-Every value is an object, and an object is just a record of methods (i.e. closures) you can call. Objects can decorate other objects, copying their methods. Variables are mutable and hoisted to the top of the method, but the initial value is not.
+Every value is an object, and an object is a record of callable methods (i.e. closures). Objects can decorate other objects, copying their methods. Variables are mutable and hoisted to the top of the method, but the initial value is not.
 
 ## Syntax
 
-Precedence is not finalized, but is currently as follows:
+Operator precedence is not finalized, but is currently as follows:
 * Unary messages have the highest precedence. `3 factorial + 4` means `(3 factorial) + 4`.
 * Binary operators are next, and left-associative. `3 + 4 * 5 min: 2` means `((3 + 4) * 5) min: 2`.
 * Keyword messages are last and also left-associative.
+
+Expressions can be sequenced with `.`.
+
+Object literals are defined with `[]` enclosing a set of methods and decorations, separated by `|`. A method consists of a method signature and a sequence of expressions. `...<expr>` is a decoration, and copies methods from a given object.
 
 ## Utilities
 
