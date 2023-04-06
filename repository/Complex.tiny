@@ -2,20 +2,52 @@ Complex :=
     [re: real Im: imaginary
         real := [...real |re real] re - [...imaginary |im 0] im.
         imaginary := [...imaginary |re imaginary] re + [...real |im 0] im.
+        self :=
         [+ other
-            other := Complex force: other
-            Complex re: real + other re im: imaginary + other im
+            other := Complex force: other.
+            Complex re: real + other re Im: imaginary + other im
         |- other
-            other := Complex force: other
-            Complex re: real - other re im: imaginary - other im
+            other := Complex force: other.
+            Complex re: real - other re Im: imaginary - other im
         |* other
-            other := Complex force: other
-            Complex re: (real * other re) - (imaginary * other im) im: (real * other im) + (imaginary * other re)
+            other := Complex force: other.
+            Complex re: (real * other re) - (imaginary * other im) Im: (real * other im) + (imaginary * other re)
         |negate
-            Complex re: real negate im: imaginary negate
+            Complex re: real negate Im: imaginary negate
         |re  real
         |im  imaginary
         |asString
-            real asString, ' + ', imaginary asString, 'i']
+            real asString, ' + ', imaginary asString, 'i'
+        |asNumber  self
+        |isComplex  false]
     |force: n
-        [...n |re n |im 0]].
+        [...n | isComplex  false] isComplex if:
+            [true  n
+            |false  Complex re: n Im: 0]].
+
+Dual :=
+    [re: real Du: dual
+        real := [...real |re real] re + [...dual |du 0] du.
+        dual := [...dual |re dual] re + [...real |du 0] du.
+        self :=
+        [+ other
+            other := Dual force: other.
+            Dual re: real + other re Du: dual + other du
+        |- other
+            other := Dual force: other.
+            Dual re: real - other re Du: dual - other du
+        |* other
+            other := Dual force: other.
+            Dual re: (real * other re) + (dual * other du) Du: (real * other du) + (dual * other re)
+        |negate
+            Dual re: real negate Du: dual negate
+        |re  real
+        |du  dual
+        |asString
+            real asString, ' + ', dual asString, 'ε'
+        |asNumber  self
+        |isDual  true]
+    |force: n
+        [...n | isDual  false] isDual if:
+            [true  n
+            |false  Dual re: n Du: 0]].
