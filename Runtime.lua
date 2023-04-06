@@ -56,6 +56,12 @@ function Runtime:new()
     local function asPrimitiveNumber(receiver)
         return lookup(lookup(receiver, "asNumber")(), "asPrimitive")()
     end
+    local function asPrimitiveNumberOrNil(receiver)
+        local method = lookupOrNil(lookup(receiver, "asNumber")(), "asPrimitive")
+        if method then
+            return method()
+        end
+    end
     local loaded = setmetatable({}, {__mode = "v"})
     
     primitives["nil"] = {}
@@ -83,16 +89,24 @@ function Runtime:new()
     primitives.number.asNumber = id
     primitives.number.asString = tostring
     primitives.number["+"] = function (a, b)
-        return a + asPrimitiveNumber(b)
+        local bP = asPrimitiveNumberOrNil(b)
+        if not bP then return lookup(b, "+")(a) end
+        return a + bP
     end
     primitives.number["-"] = function (a, b)
-        return a - asPrimitiveNumber(b)
+        local bP = asPrimitiveNumberOrNil(b)
+        if not bP then return lookup(lookup(b, "-")(a), "negate") end
+        return a - bP
     end
     primitives.number["*"] = function (a, b)
-        return a * asPrimitiveNumber(b)
+        local bP = asPrimitiveNumberOrNil(b)
+        if not bP then return lookup(b, "*")(a) end
+        return a * bP
     end
     primitives.number["/"] = function (a, b)
-        return a / asPrimitiveNumber(b)
+        local bP = asPrimitiveNumberOrNil(b)
+        if not bP then return lookup(lookup(b, "/")(a), "reciprocal") end
+        return a / bP
     end
     primitives.number["%"] = function (a, b)
         return a % asPrimitiveNumber(b)
@@ -125,6 +139,7 @@ function Runtime:new()
     primitives.number.cos = math.cos
     primitives.number.tan = math.tan
     primitives.number.negate = function (x) return -x end
+    primitives.number.reciprocal = function (x) return 1 / x end
     primitives.number.character = string.char
     primitives.number["random:"] = math.random
     primitives.number["to:"] = function (a, b)
