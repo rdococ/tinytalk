@@ -38,7 +38,7 @@ Dual :=
             Dual re: real - other re Du: dual - other du
         |* other
             other := Dual force: other.
-            Dual re: (real * other re) + (dual * other du) Du: (real * other du) + (dual * other re)
+            Dual re: (real * other re) Du: (real * other du) + (dual * other re)
         |negate
             Dual re: real negate Du: dual negate
         |re  real
