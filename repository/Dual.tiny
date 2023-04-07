@@ -34,7 +34,7 @@ epsilon := Dual re: 0 Du: 1.
 
 Derivative :=
     [of: f
-        isDerivative if: [true    system error: 'Cannot derive more than once using dual numbers' | false].
+        [...f | isDerivative  false] isDerivative if: [true    console error: 'Cannot derive more than once using dual numbers' | false].
         [of: x
             ((f of: x + epsilon) - (f of: x)) du
         |isDerivative
