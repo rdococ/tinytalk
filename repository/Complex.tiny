@@ -24,30 +24,3 @@ Complex :=
         [...n | isComplex  false] isComplex if:
             [true  n
             |false  Complex re: n Im: 0]].
-
-Dual :=
-    [re: real Du: dual
-        real := [...real |re real] re + [...dual |du 0] du.
-        dual := [...dual |re dual] re + [...real |du 0] du.
-        self :=
-        [+ other
-            other := Dual force: other.
-            Dual re: real + other re Du: dual + other du
-        |- other
-            other := Dual force: other.
-            Dual re: real - other re Du: dual - other du
-        |* other
-            other := Dual force: other.
-            Dual re: (real * other re) Du: (real * other du) + (dual * other re)
-        |negate
-            Dual re: real negate Du: dual negate
-        |re  real
-        |du  dual
-        |asString
-            real asString, ' + ', dual asString, 'ε'
-        |asNumber  self
-        |isDual  true]
-    |force: n
-        [...n | isDual  false] isDual if:
-            [true  n
-            |false  Dual re: n Du: 0]].

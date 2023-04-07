@@ -1,0 +1,41 @@
+Dual :=
+    [re: real Du: dual
+        real := [...real |re real] re + [...dual |du 0] du.
+        dual := [...dual |re dual] re + [...real |du 0] du.
+        self :=
+        [+ other
+            other := Dual force: other.
+            Dual re: real + other re Du: dual + other du
+        |- other
+            other := Dual force: other.
+            Dual re: real - other re Du: dual - other du
+        |* other
+            other := Dual force: other.
+            Dual re: (real * other re) Du: (real * other du) + (dual * other re).
+        |/ other
+            other := Dual force: other.
+            Dual re: (real / other re) Du: ((dual * other re) - (real * other du)) / (other re * other re).
+        |negate
+            Dual re: real negate Du: dual negate
+        |reciprocal
+            Dual re: 1 / real Du: dual / (real * real).
+        |re  real
+        |du  dual
+        |asString
+            real asString, ' + ', dual asString, 'ε'
+        |asNumber  self
+        |isDual  true]
+    |force: n
+        [...n | isDual  false] isDual if:
+            [true  n
+            |false  Dual re: n Du: 0]].
+
+epsilon := Dual re: 0 Du: 1.
+
+Derivative :=
+    [of: f
+        isDerivative if: [true    system error: 'Cannot derive more than once using dual numbers' | false].
+        [of: x
+            ((f of: x + epsilon) - (f of: x)) du
+        |isDerivative
+            true]].
