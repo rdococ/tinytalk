@@ -228,7 +228,7 @@ function Runtime:new()
                 for _, item in ipairs(items) do
                     table.insert(itemStrs, asPrimitiveString(item))
                 end
-                return "{" .. table.concat(itemStrs, ", ") .. "}"
+                return "Array(" .. table.concat(itemStrs, ", ") .. ")"
             end
         }
     end
@@ -281,6 +281,45 @@ function Runtime:new()
         }
     end
     
+    local Message = {}
+    setmetatable(Message, {__index = function (_, selector)
+        return function (...)
+            local args, argCount = {...}, select("#", ...)
+            
+            return {
+                ["send:"] = function (receiver)
+                    return receiver[selector](table.unpack(args, 1, argCount))
+                end,
+                asString = function ()
+                    local argStrings = {}
+                    
+                    for i, arg in ipairs(args) do
+                        table.insert(argStrings, asPrimitiveString(arg))
+                    end
+                    
+                    local messageString = {}
+                    local argIndex = 1
+                    for i = 1, #selector do
+                        local char = selector:sub(i, i)
+                        table.insert(messageString, char)
+                        
+                        if char == ":" then
+                            table.insert(messageString, " ")
+                            table.insert(messageString, asPrimitiveString(args[argIndex]))
+                            argIndex = argIndex + 1
+                            
+                            if i < #selector then
+                                table.insert(messageString, " ")
+                            end
+                        end
+                    end
+                    
+                    return "Message(" .. table.concat(messageString) .. ")"
+                end
+            }
+        end
+    end})
+    
     env = {
         lookupOrNil = lookupOrNil,
         lookup = lookup,
@@ -291,10 +330,12 @@ function Runtime:new()
         varfalse = false,
         varnl = "\n",
         
-        varconsole = console,
         varCell = Cell,
         varArray = Array,
-        varsystem = system
+        varMessage = Message,
+        
+        varconsole = console,
+        varsystem = system,
     }
     return env
 end
