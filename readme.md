@@ -47,4 +47,3 @@ There are several builtin convenience objects.
 * The `console` can `read` input, `print:` or `write:` output, or throw an `error:`.
 * The `Array` object can create `new` arrays, that can get values `at:` a position, or `at:Put:`.
 * The `system` can `require:` tinytalk code or `open:` files. Files can `read` lines, `readAll`, `write:`, get their `position` and `size`, `goto:`, `move:` and `close`.
-* The `Message` object is WIP and a bit special. Any message you send to it returns a first-class message object you can `send:` to other objects. It's intended for turning common OO idioms like event systems into simple libraries instead of WET design patterns, though it occurs to me that first-class messages are data. I may remove or tweak it :)

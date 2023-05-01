@@ -281,6 +281,7 @@ function Runtime:new()
         }
     end
     
+    -- Don't tell anyone, but I smuggled in data types :)
     local Message = {}
     setmetatable(Message, {__index = function (_, selector)
         return function (...)
