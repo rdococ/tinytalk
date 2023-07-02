@@ -1,0 +1,33 @@
+FizzBuzz := [new
+  rules := Array new.
+  ruleCount := 0.
+  self := [for: n
+    result := ''.
+    
+    loop := [on: i
+      rule := rules at: i.
+      n % rule divisor = 0 ifTrue: [do
+        result <- result, rule string].
+      i < ruleCount if: [true
+        loop on: i + 1 | false]].
+    loop on: 1.
+    
+    result = '' if: [true  n asString | false  result]. 
+  | add: rule
+    ruleCount <- ruleCount + 1.
+    rules at: ruleCount Put: rule]
+| default
+  fb := FizzBuzz new.
+  fb add: [divisor 3 | string 'Fizz'].
+  fb add: [divisor 5 | string 'Buzz'].
+  fb.
+| test
+  fb := FizzBuzz default.
+  
+  loop := [on: n
+    console print: (fb for: n).
+    n < 100 ifTrue: [do
+      loop on: n + 1]].
+  loop on: 1.
+  
+  console print: 'Test done!'].
