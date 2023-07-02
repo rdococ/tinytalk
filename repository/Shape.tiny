@@ -29,22 +29,18 @@ Intersection :=
     |origin  shapeA origin corner: shapeB origin
     |corner  shapeA corner origin: shapeB corner]].
 
-For :=
-  [from: a To: b Do: body
-    a <= b if:
-      [true
-        body with: a.
-        For from: a + 1 To: b Do: body.
-      |false]].
-
 Drawer :=
   [draw: shape
-    For from: shape origin y To: shape corner y Do: [with: y
-      For from: shape origin x To: shape corner x Do: [with: x
-        shape contains: (Point atX: x Y: y) if:
-          [true   console write: '#'
-          |false  console write: ' ']].
-      console print: '']].
+    yLoop := [on: y
+      xLoop := [on: x
+        console write: (shape contains: (Point atX: x Y: y) if: [true '#' | false ' ']).
+        x < shape corner x ifTrue: [do
+          xLoop on: x + 1]].
+      xLoop on: shape origin x.
+      console print: ''.
+      y < shape corner y ifTrue: [do
+          yLoop on: y + 1]].
+    yLoop on: shape origin y].
 
 shapeTester :=
   [test
