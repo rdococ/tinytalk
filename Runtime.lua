@@ -74,6 +74,9 @@ function Runtime:new()
     primitives.boolean["if:"] = function (self, cases)
         return lookup(cases, tostring(self))()
     end
+    primitives.boolean["ifTrue:"] = function (self, cases)
+        return self and lookup(cases, "do")() or nil
+    end
     primitives.boolean["and:"] = function (self, other)
         return self and other
     end
