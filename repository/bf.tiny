@@ -1,13 +1,13 @@
-"`brainfuck compile:` compiles brainfuck code into a program object. The program can then `instruct:` a backend object on what to do.
+"`bf compile:` compiles bf code into a program object. The program can then `instruct:` a backend object on what to do.
 
-`brainfuck interpreter` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `brainfuck luaBackend` compiles brainfuck into Lua code. You can write your own machines to interpret brainfuck programs in any way you wish or compile them to any language.
+`bf interpreter` interprets the instructions using a right-infinite tape of 8-bit wrapping cells, while `bf luaBackend` compiles bf into Lua code. You can write your own machines to interpret bf programs in any way you wish or compile them to any language.
 
-program := brainfuck compile: '+++[>+<-]'.
-program instruct: brainfuck interpreter"
+program := bf compile: '+++[>+<-]'.
+program instruct: bf interpreter"
 
 'switch' import.
 
-brainfuck := 
+bf := 
     [compile: code
         ip := 0.
         tokenizer := [read
