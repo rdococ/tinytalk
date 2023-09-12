@@ -74,8 +74,11 @@ function Runtime:new()
     primitives.boolean["if:"] = function (self, cases)
         return lookup(cases, tostring(self))()
     end
-    primitives.boolean["ifTrue:"] = function (self, cases)
-        return self and lookup(cases, "do")() or nil
+    primitives.boolean["ifTrue:"] = function (self, case)
+        return self and lookup(case, "do")() or nil
+    end
+    primitives.boolean["ifTrue:Else:"] = function (self, trueCase, falseCase)
+        return self and lookup(trueCase, "do")() or lookup(falseCase, "do")()
     end
     primitives.boolean["and:"] = function (self, other)
         return self and other
@@ -299,6 +302,9 @@ function Runtime:new()
         
         varconsole = console,
         varsystem = system,
+        
+        wrap = coroutine.wrap,
+        yield = coroutine.yield
     }
     return env
 end

@@ -18,3 +18,6 @@ console print: (2 max: 4 + 3.5 floor). "7"
 c := Cell new: 4.5.
 c put: (c min: 5 max: 3). "c put: (c min: 5) max: 3"
 console print: c. "4.5"
+
+"Blocks & early returns"
+console print: [test    {^ 4} do. 3] test. "4"

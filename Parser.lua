@@ -193,9 +193,37 @@ function Parser.cases.objopen:handleHead(token)
     return object
 end
 
+Parser.cases.blockopen = {precedence = 0}
+function Parser.cases.blockopen:handleHead(token)
+    local block = self:term {type = "block"}
+    
+    if self.lexer:peek().type == "blockclose" then
+        self.lexer:read()
+        return block
+    end
+    block.expression = self:parseRecursively(0)
+    
+    if self.lexer:peek().type == "blockclose" then
+        self.lexer:read()
+        return block
+    else
+        self:error("Expected end of block, got %s", token.type)
+    end
+    
+    return block
+end
+
+Parser.cases.yield = {precedence = 0}
+function Parser.cases.yield:handleHead(token)
+    local term = self:parseRecursively(2)
+    
+    return self:term {type = "yield", expression = term}
+end
+
 Parser.cases.exprclose = {precedence = 0}
 Parser.cases.objnext = {precedence = 0}
 Parser.cases.objclose = {precedence = 0}
+Parser.cases.blockclose = {precedence = 0}
 Parser.cases.objdeco = {precedence = 0}
 Parser.cases.eof = {precedence = 0}
 

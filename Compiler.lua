@@ -66,7 +66,7 @@ end
 
 function Compiler:compile(term)
     local self = setmetatable({}, self)
-    return ("return %s"):format(self:withGlobalScope(function () return self:compileTerm(term) end))
+    return ("return wrap(function () return %s end)()"):format(self:withGlobalScope(function () return self:compileTerm(term) end))
 end
 function Compiler:compileTerm(term)
     return self.cases[term.type](self, term)
@@ -137,11 +137,25 @@ function Compiler.cases:method(term)
     end)
     
     parameters = table.concat(parameters, ", ")
-    return ("object[%q] = object[%q] or function (%s) return %s end"):format(term.name, term.name, parameters, expression)
+    return ("object[%q] = object[%q] or wrap(function (%s) return %s end)"):format(term.name, term.name, parameters, expression)
 end
 function Compiler.cases:decorate(term)
     local value = self:compileTerm(term.value)
     return ("decorate(object, %s)"):format(value)
+end
+function Compiler.cases:block(term)
+    local expression = self:withScope(function ()
+        return term.expression and self:compileTerm(term.expression) or "nil"
+    end)
+
+    return ("({[\"do\"] = function () return %s end})"):format(expression)
+end
+function Compiler.cases:yield(term)
+    local expression = self:withScope(function ()
+        return term.expression and self:compileTerm(term.expression) or "nil"
+    end)
+
+    return ("yield(%s)"):format(expression)
 end
 
 return Compiler

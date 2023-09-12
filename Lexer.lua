@@ -75,7 +75,7 @@ local wordStartChars = charSet("abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTU
 local msgopenStartChars = charSet("abcdefghijklmnopqrstuvwxyz_")
 local msgnextStartChars = charSet("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 local wordNextChars = charSet("abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-local binopChars = charSet("+-*/%^<=>,")
+local binopChars = charSet("+-*/%<=>,")
 
 local function strCase(str, type)
     return function (self)
@@ -183,9 +183,12 @@ addCase(strCase("...", "objdeco"))
 addCase(strCase("[", "objopen"))
 addCase(strCase("|", "objnext"))
 addCase(strCase("]", "objclose"))
+addCase(strCase("{", "blockopen"))
+addCase(strCase("}", "blockclose"))
 addCase(strCase(".", "statclose"))
 addCase(strCase("(", "expropen"))
 addCase(strCase(")", "exprclose"))
 addCase(strCase(":=", "define"))
+addCase(strCase("^", "yield"))
 
 return Lexer

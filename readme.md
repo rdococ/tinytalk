@@ -34,9 +34,11 @@ Operator precedence is not finalized, but is currently as follows:
 * Binary operators are next, and left-associative. `3 + 4 * 5 min: 2` means `((3 + 4) * 5) min: 2`.
 * Keyword messages are last and also left-associative.
 
-Expressions can be sequenced with `.`.
+Expressions can be sequenced with `.`, returning the value of the last expression evaluated *unless* an explicit return is used with `^`.
 
 Object literals are defined with `[]` enclosing a set of methods and decorations, separated by `|`. A method consists of a method signature and a sequence of expressions. `...<expr>` is a decoration, and copies methods from a given object.
+
+A block can be defined with `{}` and contains a single expression. This defines an object with a single method, `do`. Explicit returns ignore block methods created this way.
 
 ## Utilities
 
