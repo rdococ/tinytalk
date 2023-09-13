@@ -287,6 +287,18 @@ function Runtime:new()
         }
     end
     
+    local wrap = function (func)
+        return function (...)
+            local tag, coro = {}, coroutine.wrap(function (...)
+                return "implicit", func(...)
+            end)
+            return (function (yieldTag, ...)
+                if yieldTag == tag or yieldTag == "implicit" then return ... end
+                return coroutine.yield(yieldTag, ...)
+            end)(coro(function (...) coroutine.yield(tag, ...) end, ...))
+        end
+    end
+    
     env = {
         lookupOrNil = lookupOrNil,
         lookup = lookup,
@@ -303,7 +315,7 @@ function Runtime:new()
         varconsole = console,
         varsystem = system,
         
-        wrap = coroutine.wrap,
+        wrap = wrap,
         yield = coroutine.yield
     }
     return env
